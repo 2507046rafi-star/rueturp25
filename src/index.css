@@ -1,0 +1,158 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap');
+@import "tailwindcss";
+
+@variant dark (&:where(.dark, .dark *));
+
+@theme {
+  --font-sans: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --font-display: "Space Grotesk", sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
+  
+  --animate-rain: rain 1s linear infinite;
+}
+
+@keyframes rain {
+  0% {
+    transform: translateY(-100%);
+  }
+  100% {
+    transform: translateY(100vh);
+  }
+}
+
+/* Custom global styles for smooth scrolling and clean custom scrollbars */
+html {
+  scroll-behavior: smooth;
+  overflow-x: hidden;
+}
+
+body {
+  font-family: var(--font-sans);
+  background-color: #FAFAF9;
+  color: #1C1917;
+  transition: background-color 0.5s ease, color 0.5s ease;
+}
+
+.dark body {
+  background-color: #0C0A09;
+  color: #FAFAF9;
+}
+
+/* Rain-bg Grid Lines */
+.rain-bg {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  opacity: 0.05;
+  background-image: 
+    linear-gradient(15deg, #F43F5E 1px, transparent 1px),
+    linear-gradient(165deg, #FB923C 1px, transparent 1px);
+  background-size: 24px 100%, 32px 100%;
+}
+
+.dark .rain-bg {
+  opacity: 0.03;
+}
+
+/* Glass Navbar */
+.glass-nav {
+  background: rgba(250, 250, 249, 0.85);
+  backdrop-filter: blur(12px);
+  border-bottom: 1px solid rgba(28, 25, 23, 0.06);
+}
+
+.dark .glass-nav {
+  background: rgba(12, 10, 9, 0.85);
+  border-bottom: 1px solid rgba(250, 250, 249, 0.08);
+}
+
+/* SpaceX Headline Styling */
+.spacex-headline {
+  font-weight: 700;
+  letter-spacing: -0.04em;
+  line-height: 0.95;
+}
+
+.sidebar-label {
+  writing-mode: vertical-rl;
+  text-orientation: mixed;
+}
+
+/* Card Hover Animations */
+.card-hover {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.card-hover:hover {
+  transform: translateY(-2px);
+  border-color: rgba(244, 63, 94, 0.35);
+  box-shadow: 0 6px 16px rgba(244, 63, 94, 0.04);
+}
+
+/* SpaceX buttons */
+.btn-spacex {
+  border: 1px solid #1C1917;
+  transition: 0.2s ease;
+}
+
+.btn-spacex:hover {
+  background: #1C1917;
+  color: #FAFAF9;
+}
+
+.dark .btn-spacex {
+  border: 1px solid #FAFAF9;
+}
+
+.dark .btn-spacex:hover {
+  background: #FAFAF9;
+  color: #0C0A09;
+}
+
+/* Custom scrollbars */
+::-webkit-scrollbar {
+  width: 5px;
+  height: 5px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.dark ::-webkit-scrollbar-track {
+  background: rgba(0,0,0,0.05);
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(244, 63, 94, 0.15);
+  border-radius: 9999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(244, 63, 94, 0.3);
+}
+
+/* Custom high-contrast layout classes */
+.text-gradient-rose-orange {
+  background: linear-gradient(135deg, #F43F5E 0%, #FB923C 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.bg-gradient-architectural {
+  background: linear-gradient(135deg, rgba(244, 63, 94, 0.04) 0%, rgba(251, 146, 60, 0.04) 100%);
+}
+
+.dark .bg-gradient-architectural {
+  background: linear-gradient(135deg, rgba(244, 63, 94, 0.08) 0%, rgba(251, 146, 60, 0.06) 100%);
+}
+
+/* Colorful rain styles */
+.rain-drop {
+  position: absolute;
+  width: 2px;
+  background: linear-gradient(to bottom, currentColor, transparent);
+  border-radius: 9999px;
+  pointer-events: none;
+  filter: drop-shadow(0 0 4px currentColor);
+}

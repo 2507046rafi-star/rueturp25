@@ -1,0 +1,6 @@
+{
+  "name": "RUET URP'25",
+  "description": "Official website for the Department of Urban and Regional Planning (URP) Batch 2025, Rajshahi University of Engineering and Technology (RUET).",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
