@@ -173,13 +173,12 @@ export default function App() {
   const fetchContactInfo = async () => {
     const { data, error } = await supabase
       .from("contact_info")
-      .select("*")
-      .eq("key", "contact_info")
-      .maybeSingle();
-    if (!error && data) {
-      if (data.contacts_json) {
+      .select("*");
+    if (!error && data && data.length > 0) {
+      const mainRow = data.find(r => r.key === "contact_info");
+      if (mainRow && mainRow.contacts_json) {
         try {
-          const parsed = typeof data.contacts_json === 'string' ? JSON.parse(data.contacts_json) : data.contacts_json;
+          const parsed = typeof mainRow.contacts_json === 'string' ? JSON.parse(mainRow.contacts_json) : mainRow.contacts_json;
           if (Array.isArray(parsed) && parsed.length > 0) {
             setContactInfo(parsed);
             return;
@@ -188,10 +187,42 @@ export default function App() {
           console.error("Error parsing contacts_json:", e);
         }
       }
-      setContactInfo([
-        { title: "General Contact", email: data.email || "sadaturp25@gmail.com", phone: data.phone || "01750-121454" }
-      ]);
+
+      const filtered = data
+        .filter(r => r.key === "contact_info" || r.key.startsWith("contact_info_"))
+        .sort((a, b) => {
+          if (a.key === "contact_info") return -1;
+          if (b.key === "contact_info") return 1;
+          return a.key.localeCompare(b.key);
+        });
+
+      if (filtered.length > 0) {
+        const contactList = filtered.map(item => {
+          let title = "General Contact";
+          if (item.key.startsWith("contact_info_")) {
+            // Reconstruct title from key, e.g. contact_info_1_Web_Support -> "Web Support"
+            const parts = item.key.split("_");
+            if (parts.length > 3) {
+              title = parts.slice(3).join(" ");
+            } else {
+              title = `Contact ${parts[2] || ""}`;
+            }
+          } else if (item.email === "sadaturp25@gmail.com" || item.phone === "01750-121454") {
+            title = "General Contact";
+          }
+          return {
+            title: title,
+            email: item.email || "",
+            phone: item.phone || ""
+          };
+        });
+        setContactInfo(contactList);
+        return;
+      }
     }
+    setContactInfo([
+      { title: "General Contact", email: "sadaturp25@gmail.com", phone: "01750-121454" }
+    ]);
   };
 
   const fetchOnlinePlatforms = async () => {
@@ -379,17 +410,20 @@ export default function App() {
 
     // 1. Search Students
     students.forEach((s) => {
+      const name = s.name || "";
+      const roll = s.roll || "";
+      const bio = s.bio || "";
       if (
-        s.name.toLowerCase().includes(query) ||
-        s.roll.toLowerCase().includes(query) ||
-        s.bio.toLowerCase().includes(query) ||
-        (s.tags && s.tags.some(t => t.toLowerCase().includes(query)))
+        name.toLowerCase().includes(query) ||
+        roll.toLowerCase().includes(query) ||
+        bio.toLowerCase().includes(query) ||
+        (s.tags && s.tags.some(t => t && t.toLowerCase().includes(query)))
       ) {
         results.push({
           type: "Student",
-          title: s.name,
-          subtitle: `Roll: ${s.roll} • ${s.bio.slice(0, 70)}...`,
-          meta: s.tags?.join(", ") || "Student Profile",
+          title: name,
+          subtitle: `Roll: ${roll} • ${bio.slice(0, 70)}...`,
+          meta: s.tags?.filter(Boolean).join(", ") || "Student Profile",
           data: s,
         });
       }
@@ -397,16 +431,19 @@ export default function App() {
 
     // 2. Search Notices
     notices.forEach((n) => {
+      const title = n.title || "";
+      const content = n.content || "";
+      const author = n.author || "";
       if (
-        n.title.toLowerCase().includes(query) ||
-        n.content.toLowerCase().includes(query) ||
-        n.author.toLowerCase().includes(query)
+        title.toLowerCase().includes(query) ||
+        content.toLowerCase().includes(query) ||
+        author.toLowerCase().includes(query)
       ) {
         results.push({
           type: "Notice",
-          title: n.title,
-          subtitle: n.content.slice(0, 100) + "...",
-          meta: `Notice by ${n.author} • ${n.date}`,
+          title: title,
+          subtitle: content.slice(0, 100) + "...",
+          meta: `Notice by ${author} • ${n.date || ""}`,
           data: n,
         });
       }
@@ -423,7 +460,7 @@ export default function App() {
         results.push({
           type: "NotePark",
           title: note.subject_name || "Lecture Note",
-          subtitle: `${note.class_teacher} • Period ${note.class_period} • ${note.class_description?.slice(0, 75)}...`,
+          subtitle: `${note.class_teacher || ""} • Period ${note.class_period || ""} • ${(note.class_description || "").slice(0, 75)}...`,
           meta: `Class Date: ${note.class_date || ""}`,
           data: note,
         });
@@ -432,16 +469,19 @@ export default function App() {
 
     // 4. Search Gallery
     galleryItems.forEach((g) => {
+      const title = g.title || "";
+      const caption = g.caption || "";
+      const category = g.category || "";
       if (
-        g.title.toLowerCase().includes(query) ||
-        g.caption.toLowerCase().includes(query) ||
-        g.category.toLowerCase().includes(query)
+        title.toLowerCase().includes(query) ||
+        caption.toLowerCase().includes(query) ||
+        category.toLowerCase().includes(query)
       ) {
         results.push({
           type: "Gallery",
-          title: g.title,
-          subtitle: g.caption.slice(0, 90) + "...",
-          meta: `Gallery • ${g.category}`,
+          title: title,
+          subtitle: caption.slice(0, 90) + "...",
+          meta: `Gallery • ${category}`,
           data: g,
         });
       }
@@ -642,6 +682,8 @@ export default function App() {
 
   const handleUpdateContactInfo = async (contactsList: { title?: string; email: string; phone: string }[]) => {
     setContactInfo(contactsList);
+    
+    // 1. Try upsert with contacts_json first (best case)
     const { error } = await supabase
       .from("contact_info")
       .upsert({
@@ -650,8 +692,44 @@ export default function App() {
         phone: contactsList[0]?.phone || "",
         contacts_json: contactsList
       });
+
     if (error) {
-      console.error("Supabase update contact info error:", error.message);
+      console.warn("Upsert with contacts_json failed, retrying with multi-row fallback:", error.message);
+      
+      try {
+        // 2. Fetch existing contact keys and delete supplementary contact_info_ rows
+        const { data: existingRows } = await supabase.from("contact_info").select("key");
+        if (existingRows) {
+          const extraKeys = existingRows.map(r => r.key).filter(k => k.startsWith("contact_info_"));
+          if (extraKeys.length > 0) {
+            await supabase.from("contact_info").delete().in("key", extraKeys);
+          }
+        }
+
+        // 3. Upsert primary row
+        await supabase
+          .from("contact_info")
+          .upsert({
+            key: "contact_info",
+            email: contactsList[0]?.email || "",
+            phone: contactsList[0]?.phone || ""
+          });
+
+        // 4. Upsert extra rows for secondary contacts
+        for (let i = 1; i < contactsList.length; i++) {
+          const c = contactsList[i];
+          const titleSlug = (c.title || `Contact ${i}`).replace(/[^a-zA-Z0-9]/g, "_");
+          await supabase
+            .from("contact_info")
+            .upsert({
+              key: `contact_info_${i}_${titleSlug}`,
+              email: c.email || "",
+              phone: c.phone || ""
+            });
+        }
+      } catch (fallbackErr: any) {
+        console.error("Multi-row fallback contact save failed:", fallbackErr.message);
+      }
     }
   };
 

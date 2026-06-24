@@ -297,12 +297,12 @@ export default function NoteParkView({ isAdmin }: NoteParkViewProps) {
     const q = searchQuery.toLowerCase().trim();
     if (!q) return true;
     
-    const matchesSubject = note.subject_name.toLowerCase().includes(q);
-    const matchesTeacher = note.class_teacher.toLowerCase().includes(q);
-    const matchesPeriod = note.class_period.toLowerCase().includes(q);
-    const matchesDate = note.class_date.toLowerCase().includes(q);
+    const matchesSubject = (note.subject_name || "").toLowerCase().includes(q);
+    const matchesTeacher = (note.class_teacher || "").toLowerCase().includes(q);
+    const matchesPeriod = (note.class_period || "").toLowerCase().includes(q);
+    const matchesDate = (note.class_date || "").toLowerCase().includes(q);
     const matchesAttachments = note.attachments && note.attachments.some(att => 
-      att.name.toLowerCase().includes(q)
+      att && (att.name || "").toLowerCase().includes(q)
     );
 
     return matchesSubject || matchesTeacher || matchesPeriod || matchesDate || !!matchesAttachments;
@@ -310,11 +310,11 @@ export default function NoteParkView({ isAdmin }: NoteParkViewProps) {
 
   const sortedNotes = [...filteredNotes].sort((a, b) => {
     if (sortBy === "date-desc") {
-      return new Date(b.class_date).getTime() - new Date(a.class_date).getTime();
+      return new Date(b.class_date || "").getTime() - new Date(a.class_date || "").getTime();
     } else if (sortBy === "date-asc") {
-      return new Date(a.class_date).getTime() - new Date(b.class_date).getTime();
+      return new Date(a.class_date || "").getTime() - new Date(b.class_date || "").getTime();
     } else {
-      return a.subject_name.localeCompare(b.subject_name);
+      return (a.subject_name || "").localeCompare(b.subject_name || "");
     }
   });
 

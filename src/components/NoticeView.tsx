@@ -25,7 +25,7 @@ export function getNoticeTags(notice: Notice): string[] {
   }
   
   const tags: string[] = [];
-  const text = (notice.title + " " + notice.content).toLowerCase();
+  const text = ((notice.title || "") + " " + (notice.content || "")).toLowerCase();
   
   if (text.includes("exam") || text.includes("test") || text.includes("mid")) tags.push("Exam");
   if (text.includes("lab") || text.includes("studio") || text.includes("computer")) tags.push("Lab");
@@ -84,39 +84,46 @@ export default function NoticeView({ notices, onViewImage }: NoticeViewProps) {
   const filteredNotices = notices.filter(notice => {
     // 1. Search filter
     const query = noticeSearch.toLowerCase().trim();
+    const title = notice.title || "";
+    const content = notice.content || "";
+    const author = notice.author || "";
     const matchesSearch = !query || 
-      notice.title.toLowerCase().includes(query) ||
-      notice.content.toLowerCase().includes(query) ||
-      notice.author.toLowerCase().includes(query);
+      title.toLowerCase().includes(query) ||
+      content.toLowerCase().includes(query) ||
+      author.toLowerCase().includes(query);
 
     // 2. Tag filter
     const tags = getNoticeTags(notice);
-    const matchesTag = selectedTag === "All" || tags.some(t => t.toLowerCase() === selectedTag.toLowerCase());
+    const matchesTag = selectedTag === "All" || tags.some(t => t && t.toLowerCase() === selectedTag.toLowerCase());
 
     return matchesSearch && matchesTag;
   });
 
   const sortedNotices = [...filteredNotices].sort((a, b) => {
     if (sortBy === "date-desc") {
-      return new Date(b.date).getTime() - new Date(a.date).getTime();
+      return new Date(b.date || "").getTime() - new Date(a.date || "").getTime();
     }
     if (sortBy === "date-asc") {
-      return new Date(a.date).getTime() - new Date(b.date).getTime();
+      return new Date(a.date || "").getTime() - new Date(b.date || "").getTime();
     }
     if (sortBy === "title") {
-      return a.title.localeCompare(b.title);
+      return (a.title || "").localeCompare(b.title || "");
     }
     if (sortBy === "author") {
-      return a.author.localeCompare(b.author);
+      return (a.author || "").localeCompare(b.author || "");
     }
     return 0;
   });
 
   // Check if attachment is image
   const isImageAttachment = (att: { name: string; url: string; type: string }) => {
-    if (att.type.startsWith("image/") || att.url.startsWith("data:image/")) return true;
+    if (!att) return false;
+    const type = att.type || "";
+    const url = att.url || "";
+    const name = att.name || "";
+    if (type.startsWith("image/") || url.startsWith("data:image/")) return true;
     const imgExtensions = [".jpg", ".jpeg", ".png", ".gif", ".webp", ".svg"];
-    return imgExtensions.some(ext => att.name.toLowerCase().endsWith(ext));
+    return imgExtensions.some(ext => name.toLowerCase().endsWith(ext));
   };
 
   return (

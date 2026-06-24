@@ -139,6 +139,22 @@ export default function AdminPanelView({
   // 7. Policy
   const [policyText, setPolicyText] = useState(adminSettings.policy);
 
+  // Sync admin settings when prop changes (e.g. from real-time database or async load)
+  useEffect(() => {
+    setAboutUsText(adminSettings.aboutUs);
+    setAboutUsImage(adminSettings.aboutUsImage);
+    setPolicyText(adminSettings.policy);
+  }, [adminSettings]);
+
+  // Sync contact info when prop changes (e.g. from real-time database or async load)
+  useEffect(() => {
+    setLocalContacts(
+      Array.isArray(contactInfo)
+        ? contactInfo
+        : [{ title: "General Contact", email: (contactInfo as any)?.email || "", phone: (contactInfo as any)?.phone || "" }]
+    );
+  }, [contactInfo]);
+
   const handleLoginSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     const success = onLogin(passcode);

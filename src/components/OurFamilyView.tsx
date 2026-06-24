@@ -45,11 +45,11 @@ export default function OurFamilyView({ students, onViewImage }: OurFamilyViewPr
   const filteredStudents = students.filter(student => {
     const query = searchQuery.toLowerCase();
     const matchesSearch = 
-      student.name.toLowerCase().includes(query) || 
-      student.roll.toLowerCase().includes(query) ||
-      student.bio.toLowerCase().includes(query);
+      (student.name || "").toLowerCase().includes(query) || 
+      (student.roll || "").toLowerCase().includes(query) ||
+      (student.bio || "").toLowerCase().includes(query);
     
-    const matchesTag = tagFilter === "All" || student.tags.includes(tagFilter);
+    const matchesTag = tagFilter === "All" || (student.tags && student.tags.includes(tagFilter));
     return matchesSearch && matchesTag;
   });
 
