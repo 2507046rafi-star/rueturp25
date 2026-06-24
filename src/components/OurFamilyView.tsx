@@ -18,9 +18,10 @@ import { Student } from "../types";
 
 interface OurFamilyViewProps {
   students: Student[];
+  onViewImage?: (src: string, alt: string) => void;
 }
 
-export default function OurFamilyView({ students }: OurFamilyViewProps) {
+export default function OurFamilyView({ students, onViewImage }: OurFamilyViewProps) {
   const [activeTab, setActiveTab] = useState<"teachers" | "students">("students");
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedStudent, setSelectedStudent] = useState<Student | null>(null);
@@ -73,7 +74,7 @@ export default function OurFamilyView({ students }: OurFamilyViewProps) {
                 : "text-gray-500 border-transparent hover:text-rose-500 hover:border-rose-500"
             }`}
           >
-            Students Roster <Users className="w-3.5 h-3.5" />
+            Students <Users className="w-3.5 h-3.5" />
           </button>
         </div>
       </div>
@@ -139,7 +140,11 @@ export default function OurFamilyView({ students }: OurFamilyViewProps) {
                     <div>
                       {/* Top Centered Profile Picture */}
                       <div className="flex justify-center mb-4">
-                        <div className="w-24 h-24 rounded-full overflow-hidden border-2 border-rose-500/20 shadow-md flex items-center justify-center bg-gray-100 dark:bg-gray-800 shrink-0">
+                        <div 
+                          onClick={() => student.avatar && onViewImage?.(student.avatar, student.name)}
+                          className={`w-24 h-24 rounded-full overflow-hidden border-2 border-rose-500/20 shadow-md flex items-center justify-center bg-gray-100 dark:bg-gray-800 shrink-0 ${student.avatar ? "cursor-pointer hover:scale-105 transition-transform duration-300" : ""}`}
+                          title={student.avatar ? "Click to view full image" : undefined}
+                        >
                           {student.avatar ? (
                             <img
                               src={student.avatar}
@@ -249,7 +254,11 @@ export default function OurFamilyView({ students }: OurFamilyViewProps) {
               <div className="px-6 pb-6 pt-0 relative">
                 {/* Overlap Avatar */}
                 <div className="flex justify-center -mt-14 mb-3">
-                  <div className="w-28 h-28 rounded-full overflow-hidden border-4 border-white dark:border-gray-900 shadow-lg bg-gray-100 dark:bg-gray-800 flex items-center justify-center shrink-0">
+                  <div 
+                    onClick={() => selectedStudent.avatar && onViewImage?.(selectedStudent.avatar, selectedStudent.name)}
+                    className={`w-28 h-28 rounded-full overflow-hidden border-4 border-white dark:border-gray-900 shadow-lg bg-gray-100 dark:bg-gray-800 flex items-center justify-center shrink-0 ${selectedStudent.avatar ? "cursor-pointer hover:scale-105 transition-transform duration-300" : ""}`}
+                    title={selectedStudent.avatar ? "Click to view full image" : undefined}
+                  >
                     {selectedStudent.avatar ? (
                       <img
                         src={selectedStudent.avatar}

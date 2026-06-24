@@ -163,7 +163,7 @@ export default function GalleryView({
                   )}
                 </div>
 
-                {/* Facebook like Post Body */}
+                {/* Post Body without likes, comments, and share */}
                 <div className="p-5 space-y-3">
                   <h3 className="font-display font-bold text-base text-gray-800 dark:text-white uppercase tracking-tight line-clamp-1">
                     {item.title}
@@ -175,31 +175,6 @@ export default function GalleryView({
                     <div className="text-[10px] font-mono text-gray-400 mt-1.5 flex justify-between">
                       <span>Caption length: {countWords(item.caption)} / 150 words</span>
                     </div>
-                  </div>
-
-                  {/* Social Action Bar */}
-                  <div className="flex items-center justify-between border-t border-gray-100 dark:border-gray-800 pt-3 mt-4 text-xs">
-                    <button
-                      onClick={() => handleLike(item.id)}
-                      className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg transition cursor-pointer ${
-                        likeState.liked 
-                          ? "bg-rose-50 dark:bg-rose-950/20 text-rose-500 font-bold" 
-                          : "text-gray-500 hover:text-rose-500 hover:bg-gray-50 dark:hover:bg-gray-800"
-                      }`}
-                    >
-                      <Heart className={`w-4 h-4 ${likeState.liked ? "fill-rose-500 text-rose-500" : ""}`} />
-                      <span>{likeState.count} Likes</span>
-                    </button>
-
-                    <button className="flex items-center gap-1.5 text-gray-500 hover:text-orange-500 px-3 py-1.5 rounded-lg transition">
-                      <MessageSquare className="w-4 h-4" />
-                      <span>Comment</span>
-                    </button>
-
-                    <button className="flex items-center gap-1.5 text-gray-500 hover:text-rose-500 px-3 py-1.5 rounded-lg transition">
-                      <Share2 className="w-4 h-4" />
-                      <span>Share</span>
-                    </button>
                   </div>
                 </div>
               </motion.div>

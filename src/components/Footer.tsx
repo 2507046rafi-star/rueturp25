@@ -16,14 +16,18 @@ import {
 import { AdminSettings } from "../types";
 
 interface FooterProps {
-  contactInfo: { email: string; phone: string };
+  contactInfo: { title?: string; email: string; phone: string }[] | { email: string; phone: string };
   adminSettings: AdminSettings;
   onlinePlatforms: { name: string; url: string }[];
-  onNavigate: (view: "Home" | "Our Family" | "Notice" | "Cloud" | "Academic Tools" | "Gallery" | "Admin Panel") => void;
+  onNavigate: (view: "Home" | "Our Family" | "Notice" | "Cloud" | "Academic Tools" | "Gallery" | "NotePark" | "Admin Panel") => void;
 }
 
 export default function Footer({ contactInfo, adminSettings, onlinePlatforms, onNavigate }: FooterProps) {
   const [activeModal, setActiveModal] = useState<"about" | "policy" | "platforms" | null>(null);
+
+  const contactsList = Array.isArray(contactInfo)
+    ? contactInfo
+    : [{ title: "General Contact", email: contactInfo?.email, phone: contactInfo?.phone }];
 
   const wordCount = (text: string) => {
     return text.trim().split(/\s+/).filter(Boolean).length;
@@ -89,28 +93,38 @@ export default function Footer({ contactInfo, adminSettings, onlinePlatforms, on
             <h4 className="text-xs font-mono font-bold uppercase tracking-widest text-gray-400 dark:text-gray-500">
               Contact Channels
             </h4>
-            <div className="space-y-2 text-xs">
-              <p className="text-gray-600 dark:text-gray-300 font-normal">
-                For administrative requests or profile registrations, reach out immediately:
-              </p>
-              <div className="space-y-1.5 font-mono">
-                <a 
-                  href={`mailto:${contactInfo.email}`} 
-                  className="flex items-center gap-2 text-gray-600 dark:text-gray-300 hover:text-rose-500 transition"
-                  title="Direct Email"
-                >
-                  <Mail className="w-4 h-4 text-rose-400 shrink-0" />
-                  <span>{contactInfo.email}</span>
-                </a>
-                <a 
-                  href={`tel:${contactInfo.phone}`} 
-                  className="flex items-center gap-2 text-gray-600 dark:text-gray-300 hover:text-rose-500 transition"
-                  title="Direct Call"
-                >
-                  <Phone className="w-4 h-4 text-orange-400 shrink-0" />
-                  <span>{contactInfo.phone}</span>
-                </a>
-              </div>
+            <div className="space-y-4 text-xs">
+              {contactsList.map((contact, i) => (
+                <div key={i} className="space-y-1.5 border-b border-gray-150/50 dark:border-zinc-900 pb-2 last:border-none last:pb-0">
+                  {contact.title && (
+                    <p className="text-gray-600 dark:text-gray-300 font-medium leading-relaxed italic text-[11px]">
+                      {contact.title}
+                    </p>
+                  )}
+                  <div className="space-y-1 font-mono">
+                    {contact.email && (
+                      <a 
+                        href={`mailto:${contact.email}`} 
+                        className="flex items-center gap-2 text-gray-600 dark:text-gray-300 hover:text-rose-500 transition"
+                        title="Direct Email"
+                      >
+                        <Mail className="w-3.5 h-3.5 text-rose-400 shrink-0" />
+                        <span className="truncate">{contact.email}</span>
+                      </a>
+                    )}
+                    {contact.phone && (
+                      <a 
+                        href={`tel:${contact.phone}`} 
+                        className="flex items-center gap-2 text-gray-600 dark:text-gray-300 hover:text-rose-500 transition"
+                        title="Direct Call"
+                      >
+                        <Phone className="w-3.5 h-3.5 text-orange-400 shrink-0" />
+                        <span>{contact.phone}</span>
+                      </a>
+                    )}
+                  </div>
+                </div>
+              ))}
             </div>
           </div>
 
@@ -118,8 +132,20 @@ export default function Footer({ contactInfo, adminSettings, onlinePlatforms, on
 
         {/* Bottom copyright margin */}
         <div className="mt-12 pt-6 border-t border-stone-200 dark:border-stone-850 flex flex-col sm:flex-row justify-between items-center text-[10px] font-mono text-gray-400 gap-4">
-          <div>
-            © 2026 RUET URP'25
+          <div className="flex flex-col sm:flex-row items-center gap-2 sm:gap-4 text-center sm:text-left">
+            <span>© 2026 RUET URP'25</span>
+            <span className="hidden sm:inline text-stone-300 dark:text-stone-800">|</span>
+            <span>
+              Developed by{" "}
+              <a 
+                href="https://www.facebook.com/ahrafiprofile" 
+                target="_blank" 
+                rel="noopener noreferrer" 
+                className="text-rose-500 hover:text-rose-600 font-bold transition underline inline-block"
+              >
+                Abdullah Al Hossain Rafi (2507046)
+              </a> .
+            </span>
           </div>
           <div className="flex gap-4">
             <button onClick={() => onNavigate("Admin Panel")} className="hover:text-rose-500 transition cursor-pointer uppercase font-bold tracking-widest">

@@ -33,6 +33,17 @@ export interface AdminSettings {
   policy: string;
 }
 
+export interface NoteParkItem {
+  id: string;
+  class_date: string;
+  class_time: string;
+  subject_name: string;
+  class_period: string;
+  class_teacher: string;
+  attachments?: { name: string; url: string; type: "file" | "photo" | "link" }[];
+  created_at?: string;
+}
+
 export type ViewType = 
   | "Home" 
   | "Our Family" 
@@ -40,6 +51,7 @@ export type ViewType =
   | "Cloud" 
   | "Academic Tools" 
   | "Gallery" 
+  | "NotePark"
   | "Admin Panel";
 
 export const safeStorage = {

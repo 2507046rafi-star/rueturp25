@@ -6,11 +6,8 @@ import {
   Network, 
   BookOpen, 
   ExternalLink, 
-  Award, 
   Settings, 
-  Compass,
-  CheckCircle,
-  HelpCircle
+  Compass
 } from "lucide-react";
 
 export default function AcademicToolsView() {
@@ -37,7 +34,7 @@ export default function AcademicToolsView() {
       id: "alumni",
       title: "Alumni Networks",
       description: "Establish connections with professional RUET planning graduates worldwide, BIP chapters, and municipal consultants.",
-      url: "https://www.urp.ruet.ac.bd/",
+      url: "https://alumni.ruet.ac.bd/",
       icon: Network,
       badge: "Alumni Directory",
       color: "from-purple-500/10 to-pink-500/10 border-purple-500/20 text-purple-500"
@@ -126,3 +123,4 @@ export default function AcademicToolsView() {
     </div>
   );
 }
+

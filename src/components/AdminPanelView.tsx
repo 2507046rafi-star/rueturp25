@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { 
   Lock, 
@@ -17,9 +17,12 @@ import {
   AlertTriangle,
   LogOut,
   Save,
-  Star
+  Star,
+  ShoppingCart,
+  RefreshCw
 } from "lucide-react";
 import { Student, Notice, GalleryItem, AdminSettings } from "../types";
+import { supabase } from "../lib/supabaseClient";
 
 interface AdminPanelViewProps {
   isAuthenticated: boolean;
@@ -47,8 +50,8 @@ interface AdminPanelViewProps {
   onUpdateSettings: (settings: AdminSettings) => void;
 
   // Contact & Social channels
-  contactInfo: { email: string; phone: string };
-  onUpdateContactInfo: (info: { email: string; phone: string }) => void;
+  contactInfo: { title?: string; email: string; phone: string }[] | { email: string; phone: string };
+  onUpdateContactInfo: (info: { title?: string; email: string; phone: string }[]) => void;
   
   onlinePlatforms: { name: string; url: string }[];
   onUpdateOnlinePlatforms: (platforms: { name: string; url: string }[]) => void;
@@ -88,6 +91,8 @@ export default function AdminPanelView({
     "notice" | "students" | "gallery" | "contact" | "ruet" | "platforms" | "policy"
   >("notice");
 
+
+
   // Local Form States
   // 1. Notice
   const [noticeTitle, setNoticeTitle] = useState("");
@@ -113,8 +118,14 @@ export default function AdminPanelView({
   const [galImageUrl, setGalImageUrl] = useState("");
 
   // 4. Contact
-  const [contEmail, setContEmail] = useState(contactInfo.email);
-  const [contPhone, setContPhone] = useState(contactInfo.phone);
+  const [localContacts, setLocalContacts] = useState<{ title?: string; email: string; phone: string }[]>(() => {
+    return Array.isArray(contactInfo)
+      ? contactInfo
+      : [{ title: "General Contact", email: (contactInfo as any)?.email || "", phone: (contactInfo as any)?.phone || "" }];
+  });
+  const [newContactTitle, setNewContactTitle] = useState("");
+  const [newContactEmail, setNewContactEmail] = useState("");
+  const [newContactPhone, setNewContactPhone] = useState("");
 
   // 5. About RUET URP'25 (Admin Settings)
   const [aboutUsText, setAboutUsText] = useState(adminSettings.aboutUs);
@@ -242,10 +253,35 @@ export default function AdminPanelView({
     triggerToast("Post added to Gallery!");
   };
 
+  const handleAddLocalContact = () => {
+    if (!newContactEmail && !newContactPhone) {
+      triggerToast("Please provide at least an email address or mobile number.", "error");
+      return;
+    }
+    setLocalContacts(prev => [...prev, {
+      title: newContactTitle.trim() || undefined,
+      email: newContactEmail.trim(),
+      phone: newContactPhone.trim()
+    }]);
+    setNewContactTitle("");
+    setNewContactEmail("");
+    setNewContactPhone("");
+    triggerToast("Contact channel draft added. Click 'Save' below to publish.");
+  };
+
+  const handleRemoveLocalContact = (idx: number) => {
+    setLocalContacts(prev => prev.filter((_, i) => i !== idx));
+    triggerToast("Contact channel draft removed.");
+  };
+
   const handleUpdateContactSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    onUpdateContactInfo({ email: contEmail, phone: contPhone });
-    triggerToast("Contact info updated!");
+    if (localContacts.length === 0) {
+      triggerToast("Please add at least one contact channel before saving.", "error");
+      return;
+    }
+    onUpdateContactInfo(localContacts);
+    triggerToast("Contact channels updated and saved successfully!");
   };
 
   const handleUpdateAboutUsSubmit = (e: React.FormEvent) => {
@@ -816,37 +852,102 @@ export default function AdminPanelView({
                 <h3 className="font-display font-extrabold text-lg text-gray-900 dark:text-white uppercase">
                   Contact Enquiry
                 </h3>
-                <p className="text-xs text-gray-400">Configure central mobile contacts and email channels displayed on footer margins.</p>
+                <p className="text-xs text-gray-400">Configure central mobile contacts and email channels displayed on footer margins. You can add multiple contacts below.</p>
               </div>
 
-              <form onSubmit={handleUpdateContactSubmit} className="space-y-4 text-xs">
-                <div className="space-y-1">
-                  <label className="text-[10px] font-mono uppercase text-gray-400">Batch Official Contact Email</label>
-                  <input
-                    type="email"
-                    required
-                    value={contEmail}
-                    onChange={(e) => setContEmail(e.target.value)}
-                    className="w-full px-3 py-2 rounded-lg bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-800 dark:text-gray-100 focus:outline-none focus:ring-1 focus:ring-rose-500 font-mono"
-                  />
-                </div>
+              {/* LIST OF CURRENT CONTACTS */}
+              <div className="space-y-3">
+                <span className="text-[10px] font-mono uppercase text-gray-400 font-bold tracking-widest block">
+                  Active Contact Channels ({localContacts.length})
+                </span>
 
-                <div className="space-y-1">
-                  <label className="text-[10px] font-mono uppercase text-gray-400">Official Mobile Hotline</label>
-                  <input
-                    type="text"
-                    required
-                    value={contPhone}
-                    onChange={(e) => setContPhone(e.target.value)}
-                    className="w-full px-3 py-2 rounded-lg bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-800 dark:text-gray-100 focus:outline-none focus:ring-1 focus:ring-rose-500 font-mono"
-                  />
+                <div className="grid gap-3">
+                  {localContacts.map((contact, idx) => (
+                    <div 
+                      key={idx} 
+                      className="p-4 rounded-xl bg-gray-50 dark:bg-stone-900 border border-gray-200 dark:border-stone-800 flex items-start justify-between text-xs"
+                    >
+                      <div className="space-y-1">
+                        {contact.title && (
+                          <p className="font-bold text-gray-900 dark:text-white">{contact.title}</p>
+                        )}
+                        <p className="font-mono text-gray-600 dark:text-gray-300">
+                          {contact.email && <span className="mr-3">📧 {contact.email}</span>}
+                          {contact.phone && <span>📞 {contact.phone}</span>}
+                        </p>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => handleRemoveLocalContact(idx)}
+                        className="text-red-500 hover:text-red-600 p-1 cursor-pointer"
+                        title="Remove Contact Channel"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
+                  ))}
                 </div>
+              </div>
 
+              {/* ADD CONTACT FORM */}
+              <div className="p-5 rounded-xl border border-dashed border-gray-300 dark:border-stone-700 bg-stone-50/50 dark:bg-stone-950/20 space-y-4">
+                <span className="text-xs font-mono uppercase text-rose-500 font-bold tracking-widest flex items-center gap-1">
+                  <Plus className="w-4 h-4" /> Add contact
+                </span>
+
+                <div className="space-y-3 text-xs">
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-mono uppercase text-gray-400">Contact Title / Description (e.g. Website help)</label>
+                    <input
+                      type="text"
+                      placeholder="e.g. For any website related problems or any technical help of RUET URP'25"
+                      value={newContactTitle}
+                      onChange={(e) => setNewContactTitle(e.target.value)}
+                      className="w-full px-3 py-2 rounded-lg bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-800 dark:text-gray-100 focus:outline-none focus:ring-1 focus:ring-rose-500"
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-1">
+                      <label className="text-[10px] font-mono uppercase text-gray-400">Email Address</label>
+                      <input
+                        type="email"
+                        placeholder="rafitoday2007@gmail.com"
+                        value={newContactEmail}
+                        onChange={(e) => setNewContactEmail(e.target.value)}
+                        className="w-full px-3 py-2 rounded-lg bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-800 dark:text-gray-100 focus:outline-none focus:ring-1 focus:ring-rose-500 font-mono"
+                      />
+                    </div>
+
+                    <div className="space-y-1">
+                      <label className="text-[10px] font-mono uppercase text-gray-400">Mobile Phone Number</label>
+                      <input
+                        type="text"
+                        placeholder="01619871136"
+                        value={newContactPhone}
+                        onChange={(e) => setNewContactPhone(e.target.value)}
+                        className="w-full px-3 py-2 rounded-lg bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-800 dark:text-gray-100 focus:outline-none focus:ring-1 focus:ring-rose-500 font-mono"
+                      />
+                    </div>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={handleAddLocalContact}
+                    className="px-4 py-2 bg-stone-200 hover:bg-stone-300 dark:bg-stone-800 dark:hover:bg-stone-700 text-gray-800 dark:text-gray-200 font-bold uppercase rounded-lg transition cursor-pointer text-[10px] font-mono"
+                  >
+                    + Add to Contact List Draft
+                  </button>
+                </div>
+              </div>
+
+              {/* SAVE FORM TO DB */}
+              <form onSubmit={handleUpdateContactSubmit} className="pt-2">
                 <button
                   type="submit"
-                  className="px-4 py-2 bg-rose-500 hover:bg-rose-600 text-white font-semibold uppercase rounded-lg transition cursor-pointer flex items-center gap-1.5"
+                  className="px-4 py-2.5 bg-rose-500 hover:bg-rose-600 text-white font-bold uppercase rounded-lg transition cursor-pointer flex items-center gap-1.5 text-xs shadow-md"
                 >
-                  <Save className="w-3.5 h-3.5" /> Save Contact Details
+                  <Save className="w-4 h-4" /> Save Contact Details
                 </button>
               </form>
             </div>
@@ -976,6 +1077,8 @@ export default function AdminPanelView({
               </div>
             </div>
           )}
+
+
 
           {/* WEBSITE POLICY ENQUIRY */}
           {activeEnquiry === "policy" && (

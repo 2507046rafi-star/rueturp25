@@ -18,68 +18,68 @@ export default function CloudView() {
     {
       year: 1,
       title: "1st Year",
-      description: "Foundational planning books, structural sketching tutorials, and basic drafting sheets.",
+      description: "",
       drives: [
         {
-          name: "Drive – 01 (Academic References)",
+          name: "Drive - 01",
           url: "https://drive.google.com/drive/folders/1Lto8hLFOJ13Evd8wNbr_Gt7s_nZRLBtB",
-          desc: "Contains general textbooks, basic AutoCAD assignments, and structural survey notes."
+          desc: ""
         },
         {
-          name: "Drive – 02 (Studio Templates)",
+          name: "Drive - 02",
           url: "https://drive.google.com/drive/folders/1EprFnQrzZ3HafRD2lbOFNHosqAxbmQ_i",
-          desc: "Contains isometric templates, sketching references, and course outlines."
+          desc: ""
         }
       ]
     },
     {
       year: 2,
       title: "2nd Year",
-      description: "GIS database models, transportation systems references, and land use mapping assets.",
+      description: "",
       drives: [
         {
-          name: "Drive – 01 (GIS Labs & Spatial Data)",
+          name: "Drive - 01",
           url: "https://drive.google.com/drive/folders/1wfKVYklIfHc17u8uv6NHgrmCgVdQGMgg?usp=drive_link",
-          desc: "Vector mapping shapes, elevation maps, and satellite analytics tutorials."
+          desc: ""
         },
         {
-          name: "Drive – 02 (Zoning & Layout Studio)",
+          name: "Drive - 02",
           url: "https://drive.google.com/drive/folders/1EprFnQrzZ3HafRD2lbOFNHosqAxbmQ_i",
-          desc: "Zoning calculations, residential layout guidelines, and planning regulations."
+          desc: ""
         }
       ]
     },
     {
       year: 3,
       title: "3rd Year",
-      description: "Regional master planning reports, transport studio assets, and housing policy documents.",
+      description: "",
       drives: [
         {
-          name: "Drive – 01 (Transport Planning Studio)",
+          name: "Drive - 01",
           url: "https://drive.google.com/drive/folders/1Lto8hLFOJ13Evd8wNbr_Gt7s_nZRLBtB",
-          desc: "Traffic volume studies, highway intersection design files, and public transit drafts."
+          desc: ""
         },
         {
-          name: "Drive – 02 (Housing & Demography)",
+          name: "Drive - 02",
           url: "https://drive.google.com/drive/folders/1EprFnQrzZ3HafRD2lbOFNHosqAxbmQ_i",
-          desc: "Demographic survey spreadsheets, urban renewal designs, and housing market analysis."
+          desc: ""
         }
       ]
     },
     {
       year: 4,
       title: "4th Year",
-      description: "Thesis archives, research paper templates, internship guidelines, and GIS programming databases.",
+      description: "",
       drives: [
         {
-          name: "Drive – 01 (Thesis & Capstone Resources)",
+          name: "Drive - 01",
           url: "https://drive.google.com/drive/folders/1Lto8hLFOJ13Evd8wNbr_Gt7s_nZRLBtB",
-          desc: "Latex templates, academic writing styles, previous thesis projects, and research databases."
+          desc: ""
         },
         {
-          name: "Drive – 02 (Internship & Professional Practice)",
+          name: "Drive - 02",
           url: "https://drive.google.com/drive/folders/1wfKVYklIfHc17u8uv6NHgrmCgVdQGMgg?usp=drive_link",
-          desc: "Professional practitioner codes, consulting mock projects, and city corporation internships."
+          desc: ""
         }
       ]
     }
@@ -158,27 +158,31 @@ export default function CloudView() {
                     <h3 className="font-display font-extrabold text-xl text-stone-900 dark:text-white uppercase tracking-tight mt-1">
                       {activeData.title}
                     </h3>
-                    <p className="text-xs text-stone-600 dark:text-stone-300 mt-1 font-normal leading-relaxed">
-                      {activeData.description}
-                    </p>
+                    {activeData.description && (
+                      <p className="text-xs text-stone-600 dark:text-stone-300 mt-1 font-normal leading-relaxed">
+                        {activeData.description}
+                      </p>
+                    )}
                   </div>
 
                   <div className="space-y-4">
                     {activeData.drives.map((drive, idx) => (
                       <div
                         key={idx}
-                        className="p-4 rounded-xl bg-stone-50/50 dark:bg-stone-900/30 border border-stone-200 dark:border-stone-800 hover:border-rose-400/50 transition duration-300 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 group"
+                        className="p-5 rounded-xl bg-stone-50/50 dark:bg-stone-900/30 border border-stone-200 dark:border-stone-800 hover:border-rose-400/50 transition duration-300 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 group"
                       >
                         <div className="space-y-1">
-                          <div className="flex items-center gap-2">
-                            <HardDrive className="w-4 h-4 text-orange-500 shrink-0" />
-                            <span className="font-display font-bold text-xs text-stone-800 dark:text-white uppercase tracking-tight">
+                          <div className="flex items-center gap-2.5">
+                            <HardDrive className="w-5 h-5 text-orange-500 shrink-0" />
+                            <span className="font-display font-extrabold text-lg sm:text-xl text-stone-900 dark:text-white uppercase tracking-tight">
                               {drive.name}
                             </span>
                           </div>
-                          <p className="text-xs text-stone-600 dark:text-stone-300 font-normal">
-                            {drive.desc}
-                          </p>
+                          {drive.desc && (
+                            <p className="text-xs text-stone-600 dark:text-stone-300 font-normal">
+                              {drive.desc}
+                            </p>
+                          )}
                         </div>
                         <a
                           href={drive.url}

@@ -32,19 +32,17 @@ export default function HomeView({ notices, students, onNavigate }: HomeViewProp
   // Background images slideshow for Hero section
   const [bgIndex, setBgIndex] = useState(0);
   const backgroundImages = [
-    "https://images.unsplash.com/photo-1524661135-423995f22d0b?auto=format&fit=crop&w=1600&q=80", // Map of Bangladesh / Geographic grid
-    "https://images.unsplash.com/photo-1451187580459-43490279c0fa?auto=format&fit=crop&w=1600&q=80", // Whole world map network
-    "https://images.unsplash.com/photo-1614730321146-b6fa6a46bcb4?auto=format&fit=crop&w=1600&q=80", // Stunning earth view from space
-    "https://images.unsplash.com/photo-1569336415962-a4bd9f69cd83?auto=format&fit=crop&w=1600&q=80", // Urban planning city map blueprint layout
-    "https://images.unsplash.com/photo-1504608524841-42fe6f032b4b?auto=format&fit=crop&w=1600&q=80", // Topographic map curves and physical land contour lines
-    "https://images.unsplash.com/photo-1503387762458-7e52d4efddca?auto=format&fit=crop&w=1600&q=80", // Spatial engineering, architecture blueprint plan
-    "https://images.unsplash.com/photo-1590012314607-cda9d9b6a919?auto=format&fit=crop&w=1600&q=80"  // Red brick campus architectural structure (RUET look)
+    "https://images.unsplash.com/photo-1541339907198-e08756dedf3f?auto=format&fit=crop&w=1600&q=80", // (1) Rajshahi University of Engineering and Technology look (red brick campus)
+    "https://images.unsplash.com/photo-1451187580459-43490279c0fa?auto=format&fit=crop&w=1600&q=80", // (2) Night images of earth from satellite
+    "https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?auto=format&fit=crop&w=1600&q=80", // (3) GIS mapping of Bangladesh of natural beauty
+    "https://images.unsplash.com/photo-1569336415962-a4bd9f69cd83?auto=format&fit=crop&w=1600&q=80", // (4) Urban & Regional Planning related images
+    "https://images.unsplash.com/photo-1524661135-423995f22d0b?auto=format&fit=crop&w=1600&q=80"  // (5) GIS related images of Bangladesh
   ];
 
   useEffect(() => {
     const timer = setInterval(() => {
       setBgIndex((prev) => (prev + 1) % backgroundImages.length);
-    }, 4500);
+    }, 2000);
     return () => clearInterval(timer);
   }, []);
   
@@ -246,23 +244,28 @@ export default function HomeView({ notices, students, onNavigate }: HomeViewProp
 
   return (
     <div id="home-view" className="space-y-16">
-      {/* Sleek Layout combining side-bar and Hero */}
-      <section className="relative flex border border-stone-200 dark:border-stone-850 bg-stone-50/20 dark:bg-stone-950/20 rounded-2xl overflow-hidden min-h-[60vh] backdrop-blur-sm">
-        {/* Animated Background Maps & RUET Slideshow */}
+      {/* Sleek Layout combining side-bar and Hero - borderless and barrieless */}
+      <section className="relative flex overflow-hidden min-h-[65vh] w-full text-stone-900 dark:text-white">
+        {/* Animated Background Maps & RUET Slideshow with 75% transparency (0.25 opacity) and side-to-side panning */}
         <div className="absolute inset-0 z-0 overflow-hidden pointer-events-none">
           {backgroundImages.map((imgUrl, idx) => (
             <div
               key={idx}
-              className="absolute inset-0 bg-cover bg-center transition-all duration-1000 ease-in-out"
+              className={`absolute inset-0 transition-opacity duration-1000 ease-in-out ${bgIndex === idx ? "opacity-25" : "opacity-0"}`}
               style={{
-                backgroundImage: `url('${imgUrl}')`,
-                opacity: bgIndex === idx ? 0.06 : 0,
-                transform: bgIndex === idx ? "scale(1.02)" : "scale(1.05)"
+                opacity: bgIndex === idx ? 0.25 : 0,
               }}
-            />
+            >
+              <div 
+                className="w-full h-full pan-image"
+                style={{
+                  backgroundImage: `url('${imgUrl}')`,
+                }}
+              />
+            </div>
           ))}
           {/* Subtle gradient dark/light overlay to keep text comfortable to see */}
-          <div className="absolute inset-0 bg-gradient-to-r from-stone-50/95 via-stone-50/80 to-transparent dark:from-stone-950/95 dark:via-stone-950/80 dark:to-transparent" />
+          <div className="absolute inset-0 bg-gradient-to-r from-stone-50/90 via-stone-50/60 to-transparent dark:from-stone-950/90 dark:via-stone-950/60 dark:to-transparent" />
         </div>
 
         {/* Center Content */}
@@ -276,7 +279,7 @@ export default function HomeView({ notices, students, onNavigate }: HomeViewProp
             </h1>
 
             <p className="text-stone-600 dark:text-stone-300 text-[17px] sm:text-[19px] font-normal leading-relaxed max-w-xl">
-              Explore the official portal of URP'25 batch. A high-performance hub for academic excellence, coordination, and creative planning.
+              Explore the Official Portal of RUET URP'25 — a dynamic digital platform connecting the students of the Department of Urban & Regional Planning, Rajshahi University of Engineering & Technology (RUET).
             </p>
 
             <div className="pt-4 flex flex-wrap gap-4">
