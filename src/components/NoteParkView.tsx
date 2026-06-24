@@ -35,7 +35,19 @@ interface NoteParkViewProps {
 export default function NoteParkView({ isAdmin }: NoteParkViewProps) {
   const [notes, setNotes] = useState<NoteParkItem[]>([]);
   const [isFetching, setIsFetching] = useState(false);
-  const [searchQuery, setSearchQuery] = useState("");
+  const [searchQuery, setSearchQuery] = useState(() => {
+    try {
+      return localStorage.getItem("notepark_search_init") || "";
+    } catch {
+      return "";
+    }
+  });
+
+  useEffect(() => {
+    try {
+      localStorage.removeItem("notepark_search_init");
+    } catch {}
+  }, []);
   const [sortBy, setSortBy] = useState<"date-desc" | "date-asc" | "subject">("date-desc");
 
   // Note form state
@@ -282,12 +294,18 @@ export default function NoteParkView({ isAdmin }: NoteParkViewProps) {
 
   // Filter & Sort notes
   const filteredNotes = notes.filter(note => {
-    const q = searchQuery.toLowerCase();
-    return (
-      note.subject_name.toLowerCase().includes(q) ||
-      note.class_teacher.toLowerCase().includes(q) ||
-      note.class_period.toLowerCase().includes(q)
+    const q = searchQuery.toLowerCase().trim();
+    if (!q) return true;
+    
+    const matchesSubject = note.subject_name.toLowerCase().includes(q);
+    const matchesTeacher = note.class_teacher.toLowerCase().includes(q);
+    const matchesPeriod = note.class_period.toLowerCase().includes(q);
+    const matchesDate = note.class_date.toLowerCase().includes(q);
+    const matchesAttachments = note.attachments && note.attachments.some(att => 
+      att.name.toLowerCase().includes(q)
     );
+
+    return matchesSubject || matchesTeacher || matchesPeriod || matchesDate || !!matchesAttachments;
   });
 
   const sortedNotes = [...filteredNotes].sort((a, b) => {
@@ -546,35 +564,80 @@ export default function NoteParkView({ isAdmin }: NoteParkViewProps) {
         <div className={isAdmin ? "lg:col-span-7 space-y-6" : "lg:col-span-12 space-y-6"}>
           
           {/* Query, Search and Sorting filters */}
-          <div className="flex flex-col sm:flex-row gap-4 justify-between items-center bg-white dark:bg-stone-950 p-4 rounded-xl border border-stone-200 dark:border-stone-850">
-            {/* Search Input */}
-            <div className="relative w-full sm:max-w-xs">
-              <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-400">
-                <Search className="w-4 h-4" />
-              </span>
-              <input
-                type="text"
-                placeholder="Search subject, teacher, or period..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 text-sm rounded-lg bg-stone-50 dark:bg-stone-900 border border-stone-200 dark:border-stone-800 focus:outline-none focus:ring-1 focus:ring-teal-400 text-stone-900 dark:text-stone-100"
-              />
+          <div className="bg-white dark:bg-stone-950 p-5 rounded-2xl border border-stone-200 dark:border-stone-850 space-y-4 shadow-sm">
+            <div className="flex flex-col sm:flex-row gap-4 justify-between items-stretch sm:items-center">
+              {/* Search Input */}
+              <div className="relative flex-1">
+                <span className="absolute inset-y-0 left-0 flex items-center pl-3.5 text-stone-400 dark:text-stone-500">
+                  <Search className="w-4 h-4 text-teal-500" />
+                </span>
+                <input
+                  type="text"
+                  placeholder="Search by title, teacher, subject..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="w-full pl-10 pr-10 py-2.5 text-sm rounded-xl bg-stone-50 dark:bg-stone-900 border border-stone-200 dark:border-stone-800 focus:outline-none focus:ring-2 focus:ring-teal-400/20 focus:border-teal-400 text-stone-900 dark:text-stone-100 placeholder-stone-400 transition-all font-sans"
+                />
+                {searchQuery && (
+                  <button
+                    onClick={() => setSearchQuery("")}
+                    className="absolute inset-y-0 right-0 pr-3 flex items-center text-stone-400 hover:text-stone-600 dark:hover:text-stone-200 cursor-pointer"
+                    title="Clear Search"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                )}
+              </div>
+
+              {/* Sort Dropdown */}
+              <div className="flex items-center gap-2 shrink-0">
+                <span className="text-xs text-stone-400 font-mono flex items-center gap-1 shrink-0">
+                  <ArrowUpDown className="w-3.5 h-3.5 text-teal-500" /> Sort:
+                </span>
+                <select
+                  value={sortBy}
+                  onChange={(e: any) => setSortBy(e.target.value)}
+                  className="px-3 py-2 text-xs font-bahnschrift font-semibold rounded-xl bg-stone-50 dark:bg-stone-900 text-stone-700 dark:text-stone-200 border border-stone-200 dark:border-stone-800 focus:outline-none focus:ring-2 focus:ring-teal-400/20 focus:border-teal-400 cursor-pointer"
+                >
+                  <option value="date-desc">🗓️ Date (Newest)</option>
+                  <option value="date-asc">🗓️ Date (Oldest)</option>
+                  <option value="subject">📚 Subject Name</option>
+                </select>
+              </div>
             </div>
 
-            {/* Sort Dropdown */}
-            <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
-              <span className="text-xs text-gray-400 font-mono flex items-center gap-1 shrink-0">
-                <ArrowUpDown className="w-3.5 h-3.5 text-teal-500" /> Sort By:
-              </span>
-              <select
-                value={sortBy}
-                onChange={(e: any) => setSortBy(e.target.value)}
-                className="px-2.5 py-1.5 text-xs font-semibold rounded-lg bg-stone-50 dark:bg-stone-900 text-stone-700 dark:text-stone-200 border border-stone-200 dark:border-stone-800 focus:outline-none focus:ring-1 focus:ring-teal-400 cursor-pointer"
+            {/* Quick Filters Pill bar */}
+            <div className="flex flex-wrap items-center gap-2 pt-1 border-t border-stone-100 dark:border-stone-900/40 text-xs">
+              <span className="text-stone-400 dark:text-stone-500 font-mono text-[10px] uppercase tracking-wider">Quick Filters:</span>
+              <button
+                onClick={() => setSearchQuery("")}
+                className={`px-2.5 py-1 rounded-lg text-[11px] transition-all cursor-pointer ${
+                  !searchQuery 
+                    ? "bg-teal-500/10 text-teal-500 border border-teal-500/30 font-bold" 
+                    : "bg-stone-50 dark:bg-stone-900 text-stone-500 dark:text-stone-400 border border-stone-200 dark:border-stone-800 hover:border-teal-500/30"
+                }`}
               >
-                <option value="date-desc">🗓️ Class Date (Newest)</option>
-                <option value="date-asc">🗓️ Class Date (Oldest)</option>
-                <option value="subject">📚 Subject Name</option>
-              </select>
+                All Notes
+              </button>
+              {Array.from(new Set([
+                ...notes.map(n => n.subject_name.split(" ")[0]).filter(s => s && s.length > 2),
+                ...notes.map(n => {
+                  const parts = n.class_teacher.split(" ");
+                  return parts[parts.length - 1] || "";
+                }).filter(t => t && t.length > 2)
+              ])).slice(0, 5).map((filterKeyword) => (
+                <button
+                  key={filterKeyword}
+                  onClick={() => setSearchQuery(filterKeyword)}
+                  className={`px-2.5 py-1 rounded-lg text-[11px] transition-all cursor-pointer capitalize ${
+                    searchQuery.toLowerCase() === filterKeyword.toLowerCase()
+                      ? "bg-teal-500/10 text-teal-500 border border-teal-500/30 font-bold"
+                      : "bg-stone-50 dark:bg-stone-900 text-stone-500 dark:text-stone-400 border border-stone-200 dark:border-stone-800 hover:border-teal-500/30"
+                  }`}
+                >
+                  {filterKeyword}
+                </button>
+              ))}
             </div>
           </div>
 

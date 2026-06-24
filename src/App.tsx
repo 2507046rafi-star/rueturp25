@@ -11,7 +11,14 @@ import {
   Compass, 
   HelpCircle,
   Sparkles,
-  ArrowUp
+  ArrowUp,
+  Search,
+  BookOpen,
+  User,
+  FileText,
+  Image as ImageIcon,
+  ArrowRight,
+  CornerDownLeft
 } from "lucide-react";
 
 import { Student, Notice, GalleryItem, AdminSettings, ViewType, safeStorage, safeSessionStorage } from "./types";
@@ -43,6 +50,11 @@ export default function App() {
     const saved = safeStorage.getItem("urp_dark_mode");
     return saved ? saved === "true" : false; // Normally set it in light mode view
   });
+
+  // Global Search states
+  const [globalSearchOpen, setGlobalSearchOpen] = useState(false);
+  const [globalSearchQuery, setGlobalSearchQuery] = useState("");
+  const [noteParkItems, setNoteParkItems] = useState<any[]>([]);
 
   // Global Sync States (initially fallback to defaults, populated dynamically from Supabase)
   const [students, setStudents] = useState<Student[]>(DEFAULT_STUDENTS);
@@ -126,6 +138,20 @@ export default function App() {
         category: item.category as "Academic" | "Extra-curriculum",
         date: item.date
       })));
+    }
+  };
+
+  const fetchNoteParkItems = async () => {
+    try {
+      const { data, error } = await supabase
+        .from("note_park")
+        .select("*")
+        .order("class_date", { ascending: false });
+      if (!error && data) {
+        setNoteParkItems(data);
+      }
+    } catch (e) {
+      console.error("Error fetching note park in App:", e);
     }
   };
 
@@ -248,6 +274,7 @@ export default function App() {
       fetchSettings();
       fetchContactInfo();
       fetchOnlinePlatforms();
+      fetchNoteParkItems();
     }
   };
 
@@ -299,6 +326,13 @@ export default function App() {
           fetchOnlinePlatforms();
         }
       )
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "note_park" },
+        () => {
+          fetchNoteParkItems();
+        }
+      )
       .subscribe();
 
     // Background interval fallback polling (every 8 seconds) for perfect sync if network drops or sockets disconnect
@@ -309,13 +343,188 @@ export default function App() {
       fetchSettings();
       fetchContactInfo();
       fetchOnlinePlatforms();
+      fetchNoteParkItems();
     }, 8000);
+
+    // Global shortcut to open global search bar
+    const handleGlobalKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "/" && !["INPUT", "TEXTAREA"].includes((e.target as HTMLElement).tagName)) {
+        e.preventDefault();
+        setGlobalSearchOpen(true);
+      }
+    };
+    window.addEventListener("keydown", handleGlobalKeyDown);
 
     return () => {
       supabase.removeChannel(channel);
       clearInterval(pollInterval);
+      window.removeEventListener("keydown", handleGlobalKeyDown);
     };
   }, []);
+
+  // Keyboard navigation & filtering for global search
+  const [selectedResultIndex, setSelectedResultIndex] = useState(0);
+
+  const getSearchResults = () => {
+    const query = globalSearchQuery.toLowerCase().trim();
+    if (!query) return [];
+
+    const results: {
+      type: "Student" | "Notice" | "NotePark" | "Gallery" | "AcademicTool";
+      title: string;
+      subtitle: string;
+      meta?: string;
+      data: any;
+    }[] = [];
+
+    // 1. Search Students
+    students.forEach((s) => {
+      if (
+        s.name.toLowerCase().includes(query) ||
+        s.roll.toLowerCase().includes(query) ||
+        s.bio.toLowerCase().includes(query) ||
+        (s.tags && s.tags.some(t => t.toLowerCase().includes(query)))
+      ) {
+        results.push({
+          type: "Student",
+          title: s.name,
+          subtitle: `Roll: ${s.roll} • ${s.bio.slice(0, 70)}...`,
+          meta: s.tags?.join(", ") || "Student Profile",
+          data: s,
+        });
+      }
+    });
+
+    // 2. Search Notices
+    notices.forEach((n) => {
+      if (
+        n.title.toLowerCase().includes(query) ||
+        n.content.toLowerCase().includes(query) ||
+        n.author.toLowerCase().includes(query)
+      ) {
+        results.push({
+          type: "Notice",
+          title: n.title,
+          subtitle: n.content.slice(0, 100) + "...",
+          meta: `Notice by ${n.author} • ${n.date}`,
+          data: n,
+        });
+      }
+    });
+
+    // 3. Search NotePark
+    noteParkItems.forEach((note) => {
+      if (
+        note.subject_name?.toLowerCase().includes(query) ||
+        note.class_teacher?.toLowerCase().includes(query) ||
+        note.class_description?.toLowerCase().includes(query) ||
+        note.class_period?.toLowerCase().includes(query)
+      ) {
+        results.push({
+          type: "NotePark",
+          title: note.subject_name || "Lecture Note",
+          subtitle: `${note.class_teacher} • Period ${note.class_period} • ${note.class_description?.slice(0, 75)}...`,
+          meta: `Class Date: ${note.class_date || ""}`,
+          data: note,
+        });
+      }
+    });
+
+    // 4. Search Gallery
+    galleryItems.forEach((g) => {
+      if (
+        g.title.toLowerCase().includes(query) ||
+        g.caption.toLowerCase().includes(query) ||
+        g.category.toLowerCase().includes(query)
+      ) {
+        results.push({
+          type: "Gallery",
+          title: g.title,
+          subtitle: g.caption.slice(0, 90) + "...",
+          meta: `Gallery • ${g.category}`,
+          data: g,
+        });
+      }
+    });
+
+    // 5. Search Academic Tools
+    const staticTools = [
+      { name: "Socio-Economic Survey Form Creator", desc: "Form generators and data models for socio-economic field investigations.", path: "Academic Tools" },
+      { name: "Urban Density & FAR Calculator", desc: "Calculate Floor Area Ratio, ground coverage, and residential density limits dynamically.", path: "Academic Tools" },
+      { name: "Land Use Map Legend Generator", desc: "Generate standardized GIS color legend guides according to RUET department standards.", path: "Academic Tools" },
+      { name: "Traffic Flow PCU Calculator", desc: "Convert vehicles to Passenger Car Units (PCU) automatically to analyze road carrying capacity.", path: "Academic Tools" }
+    ];
+    staticTools.forEach((t) => {
+      if (t.name.toLowerCase().includes(query) || t.desc.toLowerCase().includes(query)) {
+        results.push({
+          type: "AcademicTool",
+          title: t.name,
+          subtitle: t.desc,
+          meta: "Academic Tool Utility",
+          data: t,
+        });
+      }
+    });
+
+    return results;
+  };
+
+  const searchResults = getSearchResults();
+
+  useEffect(() => {
+    setSelectedResultIndex(0);
+  }, [globalSearchQuery]);
+
+  const handleSearchResultClick = (result: any) => {
+    setGlobalSearchOpen(false);
+    setGlobalSearchQuery("");
+
+    if (result.type === "Student") {
+      try {
+        localStorage.setItem("family_search_init", result.data.roll || result.data.name);
+      } catch {}
+      handleViewChange("Our Family");
+    } else if (result.type === "Notice") {
+      try {
+        localStorage.setItem("notice_search_init", result.data.title);
+      } catch {}
+      handleViewChange("Notice");
+    } else if (result.type === "NotePark") {
+      try {
+        localStorage.setItem("notepark_search_init", result.data.subject_name);
+      } catch {}
+      handleViewChange("NotePark");
+    } else if (result.type === "Gallery") {
+      try {
+        localStorage.setItem("gallery_search_init", result.data.title);
+      } catch {}
+      handleViewChange("Gallery");
+    } else if (result.type === "AcademicTool") {
+      handleViewChange("Academic Tools");
+    }
+  };
+
+  useEffect(() => {
+    if (!globalSearchOpen) return;
+    const handleModalKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        setGlobalSearchOpen(false);
+      } else if (e.key === "ArrowDown") {
+        e.preventDefault();
+        setSelectedResultIndex((prev) => (prev + 1) % Math.max(1, searchResults.length));
+      } else if (e.key === "ArrowUp") {
+        e.preventDefault();
+        setSelectedResultIndex((prev) => (prev - 1 + searchResults.length) % Math.max(1, searchResults.length));
+      } else if (e.key === "Enter") {
+        e.preventDefault();
+        if (searchResults[selectedResultIndex]) {
+          handleSearchResultClick(searchResults[selectedResultIndex]);
+        }
+      }
+    };
+    window.addEventListener("keydown", handleModalKeyDown);
+    return () => window.removeEventListener("keydown", handleModalKeyDown);
+  }, [globalSearchOpen, searchResults, selectedResultIndex]);
 
   // Admin Session Handlers
   const handleAdminLogin = (pass: string): boolean => {
@@ -547,6 +756,15 @@ export default function App() {
           {/* Theme Switcher & Mobile Menu Trigger */}
           <div className="flex items-center gap-4">
             <button
+              onClick={() => setGlobalSearchOpen(true)}
+              className="p-2 rounded-lg bg-gray-100 hover:bg-gray-200 dark:bg-zinc-900 dark:hover:bg-zinc-850 border border-gray-200 dark:border-zinc-800 text-gray-700 dark:text-gray-300 cursor-pointer transition-all flex items-center gap-1 text-xs font-semibold uppercase tracking-wider group"
+              title="Global Search (Press '/' to search)"
+            >
+              <Search className="w-4 h-4 text-rose-500 group-hover:scale-110 transition-transform" />
+              <span className="hidden lg:inline text-stone-500 dark:text-stone-400 font-mono text-[9px] lowercase bg-stone-200/60 dark:bg-stone-800/80 px-1.5 py-0.5 rounded border border-stone-300 dark:border-stone-700">/</span>
+            </button>
+
+            <button
               onClick={() => setDarkMode(!darkMode)}
               className="p-2 rounded-lg bg-gray-100 hover:bg-gray-200 dark:bg-zinc-900 dark:hover:bg-zinc-850 border border-gray-200 dark:border-zinc-800 text-gray-700 dark:text-gray-300 cursor-pointer transition-colors"
               title={darkMode ? "Switch to Light Mode" : "Switch to Dark Mode"}
@@ -575,6 +793,17 @@ export default function App() {
             className="fixed inset-x-0 top-16 bg-white dark:bg-zinc-950 border-b border-gray-200 dark:border-zinc-900 z-30 py-6 px-6 space-y-4 md:hidden shadow-xl"
           >
             <div className="flex flex-col gap-4 text-left">
+              <button
+                onClick={() => {
+                  setMobileMenuOpen(false);
+                  setGlobalSearchOpen(true);
+                }}
+                className="flex items-center gap-2.5 text-sm font-bahnschrift font-semibold tracking-widest uppercase py-2 text-left text-rose-500 border-b border-gray-100 dark:border-zinc-900 cursor-pointer"
+              >
+                <Search className="w-4 h-4 text-rose-500" />
+                <span>Search Website</span>
+              </button>
+
               {(["Home", "Our Family", "Notice", "Cloud", "Academic Tools", "Gallery", "NotePark"] as ViewType[]).map((view) => (
                 <button
                   key={view}
@@ -632,6 +861,7 @@ export default function App() {
             {activeView === "Notice" && (
               <NoticeView 
                 notices={notices} 
+                onViewImage={(src, alt) => setLightboxImage({ src, alt })}
               />
             )}
 
@@ -742,6 +972,144 @@ export default function App() {
               />
               <div className="w-full p-4 bg-stone-900 border-t border-white/5 text-center text-xs font-mono text-gray-300">
                 <span className="font-bold text-white uppercase tracking-wider">{lightboxImage.alt}</span>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Global Command+K Search Modal */}
+      <AnimatePresence>
+        {globalSearchOpen && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-stone-900/45 dark:bg-black/75 backdrop-blur-md z-50 flex items-start justify-center p-4 sm:p-10 md:p-20 overflow-y-auto"
+            onClick={() => setGlobalSearchOpen(false)}
+          >
+            <motion.div
+              initial={{ scale: 0.95, y: -20 }}
+              animate={{ scale: 1, y: 0 }}
+              exit={{ scale: 0.95, y: -20 }}
+              transition={{ duration: 0.2, ease: "easeOut" }}
+              className="bg-white dark:bg-[#0C0A09] border border-stone-200 dark:border-stone-850 rounded-3xl w-full max-w-2xl shadow-2xl relative overflow-hidden flex flex-col max-h-[80vh] mt-10 md:mt-2"
+              onClick={(e) => e.stopPropagation()}
+            >
+              {/* Search Bar Input */}
+              <div className="relative border-b border-stone-100 dark:border-stone-900 p-4 flex items-center gap-3">
+                <Search className="w-5 h-5 text-rose-500 shrink-0" />
+                <input
+                  type="text"
+                  placeholder="Type roll, teacher, name, subject, notice content..."
+                  value={globalSearchQuery}
+                  onChange={(e) => setGlobalSearchQuery(e.target.value)}
+                  className="w-full bg-transparent text-stone-900 dark:text-white placeholder-stone-400 text-sm focus:outline-none py-1"
+                  autoFocus
+                />
+                <button
+                  onClick={() => {
+                    setGlobalSearchOpen(false);
+                    setGlobalSearchQuery("");
+                  }}
+                  className="p-1 rounded-lg hover:bg-stone-100 dark:hover:bg-stone-900 text-stone-400 hover:text-stone-600 dark:hover:text-stone-200 text-xs font-mono border border-stone-200 dark:border-stone-850 shrink-0 cursor-pointer animate-pulse"
+                  title="Close Search"
+                >
+                  [Esc]
+                </button>
+              </div>
+
+              {/* Scrollable Search Results Area */}
+              <div className="overflow-y-auto p-4 space-y-3 flex-1 min-h-[150px] max-h-[60vh] text-left">
+                {globalSearchQuery.trim() === "" ? (
+                  <div className="py-10 text-center text-stone-400 dark:text-stone-500 space-y-3">
+                    <Search className="w-10 h-10 text-stone-300 dark:text-stone-800 mx-auto animate-pulse" />
+                    <p className="text-xs font-mono font-medium uppercase tracking-wider text-rose-500">Search Portal of RUET URP'25</p>
+                    <p className="text-[11px] max-w-xs mx-auto leading-relaxed font-arial text-stone-400">
+                      Search student profiles by roll/name, notice bulletins, teacher titles, and class lecture materials instantly.
+                    </p>
+                  </div>
+                ) : searchResults.length > 0 ? (
+                  <div className="space-y-1">
+                    <div className="px-2 pb-2 text-[10px] font-mono font-bold text-rose-500 dark:text-rose-400 uppercase tracking-widest border-b border-stone-100 dark:border-stone-900/50">
+                      Search Results ({searchResults.length})
+                    </div>
+                    
+                    {searchResults.map((res, index) => {
+                      const isSelected = index === selectedResultIndex;
+                      return (
+                        <div
+                          key={index}
+                          onClick={() => handleSearchResultClick(res)}
+                          className={`p-3.5 rounded-2xl border transition duration-150 flex items-start gap-3 cursor-pointer group ${
+                            isSelected
+                              ? "bg-rose-500/5 border-rose-500/25 dark:border-rose-500/30"
+                              : "bg-transparent border-transparent hover:bg-stone-50 dark:hover:bg-stone-900/50"
+                          }`}
+                        >
+                          {/* Left Icon depending on search result type */}
+                          <div className={`p-2.5 rounded-xl border shrink-0 ${
+                            isSelected
+                              ? "bg-white dark:bg-stone-900 border-rose-200 dark:border-rose-900/50 shadow-sm"
+                              : "bg-stone-50 dark:bg-stone-900 border-stone-150 dark:border-stone-800"
+                          }`}>
+                            {res.type === "Student" && <User className="w-4 h-4 text-rose-500" />}
+                            {res.type === "Notice" && <FileText className="w-4 h-4 text-orange-500" />}
+                            {res.type === "NotePark" && <BookOpen className="w-4 h-4 text-indigo-500" />}
+                            {res.type === "Gallery" && <ImageIcon className="w-4 h-4 text-emerald-500" />}
+                            {res.type === "AcademicTool" && <Compass className="w-4 h-4 text-purple-500" />}
+                          </div>
+
+                          {/* Content */}
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2 justify-between">
+                              <span className="text-xs font-bold text-stone-900 dark:text-white uppercase tracking-tight group-hover:text-rose-500 transition-colors">
+                                {res.title}
+                              </span>
+                              <span className="text-[9px] font-mono font-bold bg-stone-100 dark:bg-stone-900 px-2 py-0.5 rounded text-stone-500 uppercase tracking-widest shrink-0">
+                                {res.type}
+                              </span>
+                            </div>
+                            <p className="text-xs text-stone-500 dark:text-stone-400 mt-1 leading-normal font-arial line-clamp-1">
+                              {res.subtitle}
+                            </p>
+                            {res.meta && (
+                              <div className="text-[10px] font-mono text-stone-400 dark:text-stone-500 mt-1 uppercase tracking-wider truncate">
+                                {res.meta}
+                              </div>
+                            )}
+                          </div>
+
+                          {/* Arrow or feedback */}
+                          <div className="self-center opacity-0 group-hover:opacity-100 transition-opacity">
+                            <ArrowRight className="w-4 h-4 text-rose-500 animate-bounce-right" />
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <div className="py-12 text-center text-stone-400 dark:text-stone-500">
+                    <X className="w-8 h-8 text-rose-500/30 mx-auto mb-2 animate-pulse" />
+                    <p className="text-xs font-bold text-stone-600 dark:text-stone-300">No results found for "{globalSearchQuery}"</p>
+                    <p className="text-[11px] mt-1 font-arial text-stone-500">Try searching roll numbers (e.g. 2017001), teacher names, or planning terms.</p>
+                  </div>
+                )}
+              </div>
+
+              {/* Footer details */}
+              <div className="p-3 bg-stone-50 dark:bg-stone-900/30 border-t border-stone-100 dark:border-stone-850 flex items-center justify-between text-[10px] font-mono text-stone-400 dark:text-stone-500 px-4 shrink-0">
+                <div className="flex items-center gap-3">
+                  <span className="flex items-center gap-1">
+                    <kbd className="px-1.5 py-0.5 rounded bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-850 shadow-sm text-[8px] font-bold">↑↓</kbd> Navigate
+                  </span>
+                  <span className="flex items-center gap-1">
+                    <kbd className="px-1.5 py-0.5 rounded bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-850 shadow-sm text-[8px] font-bold">Enter</kbd> Open
+                  </span>
+                </div>
+                <div className="flex items-center gap-1">
+                  Powered by <span className="text-rose-500 font-bold">RUET URP'25</span>
+                </div>
               </div>
             </motion.div>
           </motion.div>

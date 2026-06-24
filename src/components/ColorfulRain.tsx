@@ -30,8 +30,8 @@ export default function ColorfulRain() {
       "text-fuchsia-500/80 dark:text-fuchsia-400/70",
       "text-amber-400/80 dark:text-amber-300/70",
     ];
-    // Decrease count to 60 (30% decrease from 85) for optimal luxury rain flow effect
-    const generated: Drop[] = Array.from({ length: 60 }).map((_, i) => {
+    // Decrease count to 48 (additional 20% decrease from 60) for optimal luxury rain flow effect
+    const generated: Drop[] = Array.from({ length: 48 }).map((_, i) => {
       const left = `${Math.random() * 100}%`;
       const delay = `${Math.random() * 8}s`;
       const duration = `${1.8 + Math.random() * 3.5}s`;

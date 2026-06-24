@@ -99,6 +99,7 @@ export default function AdminPanelView({
   const [noticeContent, setNoticeContent] = useState("");
   const [noticeAuthor, setNoticeAuthor] = useState("Sadat Rahman (CR)");
   const [noticeAttachments, setNoticeAttachments] = useState<{ name: string; url: string; type: string }[]>([]);
+  const [noticeTags, setNoticeTags] = useState("");
 
   // 2. Student
   const [studRoll, setStudRoll] = useState("");
@@ -158,18 +159,28 @@ export default function AdminPanelView({
     e.preventDefault();
     if (!noticeTitle.trim() || !noticeContent.trim()) return;
     
+    const finalAttachments = [...noticeAttachments];
+    if (noticeTags.trim()) {
+      finalAttachments.push({
+        name: noticeTags.trim(),
+        url: "",
+        type: "tags"
+      });
+    }
+
     onAddNotice({
       id: `notice-${Date.now()}`,
       title: noticeTitle,
       content: noticeContent,
       date: new Date().toISOString().split("T")[0],
       author: noticeAuthor,
-      attachments: noticeAttachments
+      attachments: finalAttachments
     });
 
     setNoticeTitle("");
     setNoticeContent("");
     setNoticeAttachments([]);
+    setNoticeTags("");
     triggerToast("Notice published successfully!");
   };
 
@@ -441,8 +452,8 @@ export default function AdminPanelView({
 
               {/* Add notice form */}
               <form onSubmit={handleAddNoticeSubmit} className="space-y-4">
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div className="space-y-1">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                  <div className="space-y-1 sm:col-span-1">
                     <label className="text-[10px] font-mono uppercase text-gray-400">Notice Title</label>
                     <input
                       type="text"
@@ -460,6 +471,16 @@ export default function AdminPanelView({
                       required
                       value={noticeAuthor}
                       onChange={(e) => setNoticeAuthor(e.target.value)}
+                      className="w-full px-3 py-2 text-xs rounded-lg bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-800 dark:text-gray-100 focus:outline-none focus:ring-1 focus:ring-rose-500"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-mono uppercase text-gray-400">Tags (comma separated)</label>
+                    <input
+                      type="text"
+                      placeholder="e.g., Urgent, Exam, Syllabus"
+                      value={noticeTags}
+                      onChange={(e) => setNoticeTags(e.target.value)}
                       className="w-full px-3 py-2 text-xs rounded-lg bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-800 dark:text-gray-100 focus:outline-none focus:ring-1 focus:ring-rose-500"
                     />
                   </div>

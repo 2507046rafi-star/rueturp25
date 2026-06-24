@@ -4,12 +4,17 @@
 @variant dark (&:where(.dark, .dark *));
 
 @theme {
-  --font-sans: "Times New Roman", "Cambria Math", "Franklin Gothic Demi Cond", "Cambria", "Georgia", "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --font-sans: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
   --font-display: "Space Grotesk", sans-serif;
   --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
   --font-bahnschrift: "Bahnschrift", "Bahnschrift SemiBold", "DIN Alternate", "Segoe UI", sans-serif;
+  --font-arial: "Arial", "Helvetica Neue", Helvetica, sans-serif;
   
   --animate-rain: rain 1s linear infinite;
+}
+
+.font-arial {
+  font-family: Arial, "Helvetica Neue", Helvetica, sans-serif !important;
 }
 
 @keyframes rain {

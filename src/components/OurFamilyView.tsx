@@ -23,8 +23,20 @@ interface OurFamilyViewProps {
 
 export default function OurFamilyView({ students, onViewImage }: OurFamilyViewProps) {
   const [activeTab, setActiveTab] = useState<"teachers" | "students">("students");
-  const [searchQuery, setSearchQuery] = useState("");
+  const [searchQuery, setSearchQuery] = useState(() => {
+    try {
+      return localStorage.getItem("family_search_init") || "";
+    } catch {
+      return "";
+    }
+  });
   const [selectedStudent, setSelectedStudent] = useState<Student | null>(null);
+
+  React.useEffect(() => {
+    try {
+      localStorage.removeItem("family_search_init");
+    } catch {}
+  }, []);
   const [tagFilter, setTagFilter] = useState<string>("All");
 
   // Find unique tags to populate filter
