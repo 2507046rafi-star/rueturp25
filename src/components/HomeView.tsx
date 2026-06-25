@@ -155,9 +155,9 @@ export default function HomeView({ notices, students, insiders = [], onNavigate 
   ];
 
   return (
-    <div id="home-view" className="space-y-16">
+    <div id="home-view" className="space-y-16 pb-16">
       {/* Sleek Layout combining side-bar and Hero - borderless and barrieless */}
-      <section className="relative flex overflow-hidden min-h-[65vh] w-full text-stone-900 dark:text-white">
+      <section className="relative flex overflow-hidden min-h-[calc(100vh-4rem)] w-full text-stone-900 dark:text-white">
         {/* Animated Background Maps & RUET Slideshow with 75% transparency (0.25 opacity) and side-to-side panning */}
         <div className="absolute inset-0 z-0 overflow-hidden pointer-events-none">
           {backgroundImages.map((imgUrl, idx) => (
@@ -212,8 +212,10 @@ export default function HomeView({ notices, students, insiders = [], onNavigate 
         </div>
       </section>
 
-      {/* Quick Features Grid (Matching Theme's bento feel) */}
-      <section className="grid grid-cols-1 md:grid-cols-3 gap-0 border border-stone-200 dark:border-stone-850 rounded-2xl bg-white dark:bg-stone-950 overflow-hidden divide-y md:divide-y-0 md:divide-x divide-stone-200 dark:divide-stone-850">
+      {/* Main Container below full screen hero */}
+      <div className="px-6 md:px-12 max-w-7xl mx-auto space-y-16 w-full">
+        {/* Quick Features Grid (Matching Theme's bento feel) */}
+        <section className="grid grid-cols-1 md:grid-cols-3 gap-0 border border-stone-200 dark:border-stone-850 rounded-2xl bg-white dark:bg-stone-950 overflow-hidden divide-y md:divide-y-0 md:divide-x divide-stone-200 dark:divide-stone-850">
         
         {/* Box 1: Quick Notice */}
         <div 
@@ -305,18 +307,15 @@ export default function HomeView({ notices, students, insiders = [], onNavigate 
         <div className="grid md:grid-cols-3 gap-6">
           {allInsiders.map((insider) => {
             const IconComponent = insider.icon;
-            return (
-              <motion.div
-                key={insider.id}
-                whileHover={{ y: -5 }}
-                onClick={() => setSelectedInsider(insider.id)}
-                className={`p-6 rounded-2xl bg-gradient-to-br ${insider.bg} border text-left cursor-pointer transition-shadow hover:shadow-md flex flex-col justify-between h-48 group`}
-              >
+            const isBrainstorm = insider.id === "brainstorm";
+
+            const cardContent = (
+              <div className="flex flex-col justify-between h-full w-full">
                 <div>
                   <div className="p-3 rounded-xl bg-white dark:bg-stone-900 w-11 h-11 flex items-center justify-center border border-stone-200/50 dark:border-stone-800/50 shadow-sm">
                     <IconComponent className="w-5 h-5 text-rose-500 dark:text-rose-400 group-hover:rotate-12 transition-transform" />
                   </div>
-                  <h3 className="font-display font-bold text-lg text-stone-800 dark:text-white mt-4 uppercase">
+                  <h3 className="font-display font-bold text-lg text-stone-805 dark:text-white mt-4 uppercase">
                     {insider.title}
                   </h3>
                   <p className="text-xs text-stone-500 dark:text-stone-400 mt-1 line-clamp-2">
@@ -326,11 +325,39 @@ export default function HomeView({ notices, students, insiders = [], onNavigate 
                 <span className="text-[11px] font-semibold text-rose-500 group-hover:underline flex items-center gap-1 self-start mt-4">
                   Open Workspace <ArrowRight className="w-3 h-3" />
                 </span>
+              </div>
+            );
+
+            if (isBrainstorm) {
+              return (
+                <motion.div
+                  key={insider.id}
+                  whileHover={{ y: -5 }}
+                  onClick={() => setSelectedInsider(insider.id)}
+                  className="subtle-animated-border cursor-pointer text-left shadow-sm hover:shadow-md group h-48"
+                >
+                  <div className="subtle-animated-inner p-6 h-full flex flex-col justify-between">
+                    {cardContent}
+                  </div>
+                </motion.div>
+              );
+            }
+
+            return (
+              <motion.div
+                key={insider.id}
+                whileHover={{ y: -5 }}
+                onClick={() => setSelectedInsider(insider.id)}
+                className={`p-6 rounded-2xl bg-gradient-to-br ${insider.bg} border text-left cursor-pointer transition-shadow hover:shadow-md flex flex-col justify-between h-48 group border-stone-200 dark:border-stone-850`}
+              >
+                {cardContent}
               </motion.div>
             );
           })}
         </div>
       </section>
+
+      </div>
 
       {/* SpaceX Styled Insider Modal */}
       <AnimatePresence>

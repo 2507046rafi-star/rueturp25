@@ -16,6 +16,23 @@ import {
 } from "lucide-react";
 import { Student, getCacheBustedUrl } from "../types";
 
+// Graceful fallback avatar image if any URL is broken or blocked by browser policies
+function AvatarImage({ src, alt, fallbackClass = "w-10 h-10 text-gray-400" }: { src: string; alt: string; fallbackClass?: string }) {
+  const [error, setError] = useState(false);
+  if (error) {
+    return <User className={fallbackClass} />;
+  }
+  return (
+    <img
+      src={src}
+      alt={alt}
+      referrerPolicy="no-referrer"
+      className="w-full h-full object-cover"
+      onError={() => setError(true)}
+    />
+  );
+}
+
 interface OurFamilyViewProps {
   students: Student[];
   onViewImage?: (src: string, alt: string) => void;
@@ -132,19 +149,26 @@ export default function OurFamilyView({ students, onViewImage }: OurFamilyViewPr
 
           {/* Students Grid */}
           {sortedStudents.length > 0 ? (
-            <div className="grid sm:grid-cols-2 md:grid-cols-3 gap-6">
+            <motion.div 
+              variants={{
+                hidden: { opacity: 0 },
+                show: {
+                  opacity: 1,
+                  transition: { staggerChildren: 0.03 }
+                }
+              }}
+              initial="hidden"
+              animate="show"
+              className="grid sm:grid-cols-2 md:grid-cols-3 gap-6"
+            >
               {sortedStudents.map((student) => {
                 const isCR = student.tags?.includes("CR");
-                return (
-                  <motion.div
-                    key={student.roll}
-                    layoutId={`student-card-${student.roll}`}
-                    whileHover={{ y: -6, boxShadow: "0 10px 20px -10px rgba(244,63,94,0.15)" }}
-                    className="bg-white dark:bg-stone-950 border border-stone-200 dark:border-stone-850 rounded-2xl p-6 text-center flex flex-col justify-between relative overflow-hidden card-hover"
-                  >
+                
+                const cardContent = (
+                  <div className="text-center flex flex-col justify-between h-full w-full">
                     {/* CR Star Indicator */}
                     {isCR && (
-                      <div className="absolute top-3 right-3 bg-rose-50 dark:bg-rose-950/50 p-1.5 rounded-full border border-rose-100 dark:border-rose-900/50" title="Class Representative">
+                      <div className="absolute top-3 right-3 bg-rose-50 dark:bg-rose-950/50 p-1.5 rounded-full border border-rose-100 dark:border-rose-900/50 z-10" title="Class Representative">
                         <Star className="w-4 h-4 text-rose-500 fill-rose-500" />
                       </div>
                     )}
@@ -154,15 +178,14 @@ export default function OurFamilyView({ students, onViewImage }: OurFamilyViewPr
                       <div className="flex justify-center mb-4">
                         <div 
                           onClick={() => student.avatar && onViewImage?.(getCacheBustedUrl(student.avatar), student.name)}
-                          className={`w-24 h-24 rounded-full overflow-hidden border-2 border-rose-500/20 shadow-md flex items-center justify-center bg-gray-100 dark:bg-gray-800 shrink-0 ${student.avatar ? "cursor-pointer hover:scale-105 transition-transform duration-300" : ""}`}
+                          className={`w-24 h-24 rounded-full overflow-hidden border-2 border-rose-500/20 shadow-md flex items-center justify-center bg-stone-50 dark:bg-stone-900 shrink-0 ${student.avatar ? "cursor-pointer hover:scale-105 transition-transform duration-300" : ""}`}
                           title={student.avatar ? "Click to view full image" : undefined}
                         >
                           {student.avatar ? (
-                            <img
+                            <AvatarImage
                               src={getCacheBustedUrl(student.avatar)}
                               alt={student.name}
-                              referrerPolicy="no-referrer"
-                              className="w-full h-full object-cover"
+                              fallbackClass="w-10 h-10 text-gray-400"
                             />
                           ) : (
                             <User className="w-10 h-10 text-gray-400" />
@@ -171,7 +194,7 @@ export default function OurFamilyView({ students, onViewImage }: OurFamilyViewPr
                       </div>
 
                       {/* Name & Roll */}
-                      <h3 className="font-display font-bold text-lg text-gray-800 dark:text-white uppercase tracking-tight">
+                      <h3 className="font-display font-bold text-lg text-stone-800 dark:text-white uppercase tracking-tight">
                         {student.name}
                       </h3>
                       <p className="font-mono text-xs text-orange-500 font-semibold mt-0.5">
@@ -186,7 +209,7 @@ export default function OurFamilyView({ students, onViewImage }: OurFamilyViewPr
                             className={`text-[9px] font-mono px-2 py-0.5 rounded border ${
                               t === "CR" 
                                 ? "bg-rose-500/10 text-rose-500 border-rose-500/20 font-bold" 
-                                : "bg-gray-50 dark:bg-gray-800 text-gray-500 border-gray-200 dark:border-gray-700"
+                                : "bg-stone-50 dark:bg-stone-900 text-stone-500 border-stone-200 dark:border-stone-800"
                             }`}
                           >
                             {t}
@@ -195,14 +218,14 @@ export default function OurFamilyView({ students, onViewImage }: OurFamilyViewPr
                       </div>
 
                       {/* Public Data List: Roll, Mobile numbers, Facebook link */}
-                      <div className="mt-4 pt-4 border-t border-gray-100 dark:border-gray-800 text-left space-y-2">
+                      <div className="mt-4 pt-4 border-t border-stone-100 dark:border-stone-900/50 text-left space-y-2">
                         {/* Mobile numbers */}
                         <div className="space-y-1">
                           {student.mobiles.map((mobile, idx) => (
                             <a
                               href={`tel:${mobile}`}
                               key={idx}
-                              className="flex items-center gap-2 text-xs text-gray-600 dark:text-gray-300 hover:text-rose-500 transition"
+                              className="flex items-center gap-2 text-xs text-stone-600 dark:text-stone-350 hover:text-rose-500 transition-colors"
                             >
                               <Phone className="w-3.5 h-3.5 text-rose-400 shrink-0" />
                               <span className="font-mono">{mobile}</span>
@@ -216,7 +239,7 @@ export default function OurFamilyView({ students, onViewImage }: OurFamilyViewPr
                             href={student.facebook}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="flex items-center gap-2 text-xs text-blue-600 dark:text-blue-400 hover:underline transition"
+                            className="flex items-center gap-2 text-xs text-blue-600 dark:text-blue-400 hover:underline transition-all"
                           >
                             <Facebook className="w-3.5 h-3.5 shrink-0 text-blue-500" />
                             <span className="truncate">View Facebook Profile</span>
@@ -227,14 +250,58 @@ export default function OurFamilyView({ students, onViewImage }: OurFamilyViewPr
 
                     <button
                       onClick={() => setSelectedStudent(student)}
-                      className="mt-5 w-full py-2 bg-gray-50 hover:bg-rose-500 hover:text-white dark:bg-gray-800 dark:hover:bg-rose-500 text-gray-700 dark:text-gray-200 rounded-lg text-xs font-semibold tracking-wider uppercase transition flex items-center justify-center gap-1.5 border border-gray-200/50 dark:border-gray-700/50 cursor-pointer"
+                      className="mt-5 w-full py-2 bg-stone-50 hover:bg-rose-500 hover:text-white dark:bg-stone-900 dark:hover:bg-rose-500 text-stone-700 dark:text-stone-250 rounded-lg text-xs font-semibold tracking-wider uppercase transition-all duration-300 flex items-center justify-center gap-1.5 border border-stone-200/50 dark:border-stone-800 cursor-pointer"
                     >
                       Full Profile <ChevronRight className="w-3.5 h-3.5" />
                     </button>
+                  </div>
+                );
+
+                if (isCR) {
+                  return (
+                    <motion.div
+                      key={student.roll}
+                      variants={{
+                        hidden: { opacity: 0, y: 15, scale: 0.98 },
+                        show: { 
+                          opacity: 1, 
+                          y: 0, 
+                          scale: 1,
+                          transition: { type: "spring", stiffness: 100, damping: 15 }
+                        }
+                      }}
+                      layoutId={`student-card-${student.roll}`}
+                      className="premium-border-container shadow-md hover:shadow-[0_12px_24px_-8px_rgba(244,63,94,0.25)] hover-lift transition-all duration-300"
+                    >
+                      <div className="premium-border-inner bg-white dark:bg-stone-950 p-6 relative overflow-hidden text-center flex flex-col justify-between h-full">
+                        {cardContent}
+                      </div>
+                    </motion.div>
+                  );
+                }
+
+                return (
+                  <motion.div
+                    key={student.roll}
+                    variants={{
+                      hidden: { opacity: 0, y: 15, scale: 0.98 },
+                      show: { 
+                        opacity: 1, 
+                        y: 0, 
+                        scale: 1,
+                        transition: { type: "spring", stiffness: 100, damping: 15 }
+                      }
+                    }}
+                    layoutId={`student-card-${student.roll}`}
+                    className="premium-border-container shadow-sm hover:shadow-[0_10px_20px_-10px_rgba(244,63,94,0.15)] hover-lift transition-all duration-300"
+                  >
+                    <div className="premium-border-inner bg-white dark:bg-stone-950 p-6 relative overflow-hidden text-center flex flex-col justify-between h-full">
+                      {cardContent}
+                    </div>
                   </motion.div>
                 );
               })}
-            </div>
+            </motion.div>
           ) : (
             <div className="text-center py-12 bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800">
               <User className="w-12 h-12 text-gray-300 mx-auto mb-2 animate-pulse" />
@@ -272,11 +339,10 @@ export default function OurFamilyView({ students, onViewImage }: OurFamilyViewPr
                     title={selectedStudent.avatar ? "Click to view full image" : undefined}
                   >
                     {selectedStudent.avatar ? (
-                      <img
+                      <AvatarImage
                         src={getCacheBustedUrl(selectedStudent.avatar)}
                         alt={selectedStudent.name}
-                        referrerPolicy="no-referrer"
-                        className="w-full h-full object-cover"
+                        fallbackClass="w-12 h-12 text-gray-400"
                       />
                     ) : (
                       <User className="w-12 h-12 text-gray-400" />

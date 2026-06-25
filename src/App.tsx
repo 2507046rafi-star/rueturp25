@@ -38,6 +38,7 @@ import CloudView from "./components/CloudView";
 import AcademicToolsView from "./components/AcademicToolsView";
 import AdminPanelView from "./components/AdminPanelView";
 import Footer from "./components/Footer";
+import GreetingToast from "./components/GreetingToast";
 import ruetLogo from "./assets/images/ruet_urp_logo_1782301017782.jpg";
 
 export default function App() {
@@ -53,10 +54,20 @@ export default function App() {
   const [globalSearchOpen, setGlobalSearchOpen] = useState(false);
   const [globalSearchQuery, setGlobalSearchQuery] = useState("");
 
-  // Global Sync States (initially empty to ensure we fetch freshly and exclusively from the live Supabase database, avoiding stale data and reappearances of deleted items)
-  const [students, setStudents] = useState<Student[]>([]);
-  const [notices, setNotices] = useState<Notice[]>([]);
-  const [insiderTopics, setInsiderTopics] = useState<InsiderTopic[]>([]);
+  // Global Sync States (initially populated with defaults to guarantee immediate, bug-free rendering, which are updated instantly on successful database connection)
+  const [students, setStudents] = useState<Student[]>(DEFAULT_STUDENTS);
+  const [notices, setNotices] = useState<Notice[]>(DEFAULT_NOTICES);
+  const [insiderTopics, setInsiderTopics] = useState<InsiderTopic[]>(() => {
+    return DEFAULT_INSIDERS.map(item => ({
+      id: item.id,
+      title: item.title,
+      short: item.short || "",
+      bg: item.bg || "",
+      icon: item.icon || "Map",
+      content: item.content || "",
+      attachments: item.attachments || []
+    } as InsiderTopic));
+  });
   const [adminSettings, setAdminSettings] = useState<AdminSettings>(DEFAULT_ADMIN_SETTINGS);
   const [contactInfo, setContactInfo] = useState<{ title?: string; email: string; phone: string }[]>([
     { title: "General Contact", email: "sadaturp25@gmail.com", phone: "01750-121454" },
@@ -73,6 +84,10 @@ export default function App() {
     return saved === "true";
   });
 
+  // Greeting Toast Notification States
+  const [showGreetingToast, setShowGreetingToast] = useState(false);
+  const [greetingMessage, setGreetingMessage] = useState("");
+
   // Back to Top State
   const [showBackToTop, setShowBackToTop] = useState(false);
 
@@ -86,6 +101,40 @@ export default function App() {
     }
     safeStorage.setItem("urp_dark_mode", String(darkMode));
   }, [darkMode]);
+
+  // Greeting Toast Effect
+  useEffect(() => {
+    const hasGreeted = safeSessionStorage.getItem("urp_has_greeted");
+    if (!hasGreeted) {
+      const hours = new Date().getHours();
+      let greet = "Welcome!";
+      if (hours < 12) {
+        greet = "Good morning! ☀️";
+      } else if (hours < 17) {
+        greet = "Good afternoon! 🌤️";
+      } else if (hours < 22) {
+        greet = "Good evening! 🌌";
+      } else {
+        greet = "Hello, night owl! 🦉";
+      }
+      setGreetingMessage(`${greet} Welcome to the RUET URP'25 academic portal. Experience a clean workspace loaded with learning resources!`);
+      
+      const timer = setTimeout(() => {
+        setShowGreetingToast(true);
+        safeSessionStorage.setItem("urp_has_greeted", "true");
+      }, 1500);
+
+      // Auto-dismiss after 8.5 seconds
+      const dismissTimer = setTimeout(() => {
+        setShowGreetingToast(false);
+      }, 8500);
+      
+      return () => {
+        clearTimeout(timer);
+        clearTimeout(dismissTimer);
+      };
+    }
+  }, []);
 
   // Handle Back to Top Button visibility
   useEffect(() => {
@@ -394,7 +443,7 @@ export default function App() {
     if (!query) return [];
 
     const results: {
-      type: "Student" | "Notice" | "NotePark" | "Gallery" | "AcademicTool";
+      type: "Student" | "Notice" | "Gallery" | "AcademicTool";
       title: string;
       subtitle: string;
       meta?: string;
@@ -782,7 +831,12 @@ export default function App() {
     }
   };
 
-  const handleViewChange = (view: ViewType) => {
+  const handleViewChange = (view: any) => {
+    if (view === "Gallery") {
+      window.open("https://sites.google.com/view/ruet-urp-25-gallery/home", "_blank");
+      setMobileMenuOpen(false);
+      return;
+    }
     setActiveView(view);
     setMobileMenuOpen(false);
     window.scrollTo({ top: 0, behavior: "smooth" });
@@ -822,25 +876,40 @@ export default function App() {
 
           {/* Desktop Menu - SpaceX inspired minimalist uppercase text */}
           <nav className="hidden md:flex items-center gap-8">
-            {(["Home", "Our Family", "Notice", "Cloud", "Academic Tools", "Gallery", "NotePark"] as ViewType[]).map((view) => (
-              <button
-                key={view}
-                onClick={() => handleViewChange(view)}
-                className={`text-[15px] font-bahnschrift font-semibold tracking-wider uppercase transition-colors relative py-1 cursor-pointer ${
-                  activeView === view 
-                    ? "text-rose-600 font-bold" 
-                    : "text-stone-500 dark:text-stone-300 hover:text-rose-600 dark:hover:text-rose-500"
-                }`}
-              >
-                {view}
-                {activeView === view && (
-                  <motion.div 
-                    layoutId="activeIndicator" 
-                    className="absolute bottom-0 inset-x-0 h-0.5 bg-rose-600" 
-                  />
-                )}
-              </button>
-            ))}
+            {(["Home", "Our Family", "Notice", "Cloud", "Academic Tools", "Gallery"] as any[]).map((view) => {
+              if (view === "Gallery") {
+                return (
+                  <a
+                    key={view}
+                    href="https://sites.google.com/view/ruet-urp-25-gallery/home"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-[15px] font-bahnschrift font-semibold tracking-wider uppercase transition-colors relative py-1 cursor-pointer text-stone-500 dark:text-stone-300 hover:text-rose-600 dark:hover:text-rose-500"
+                  >
+                    Gallery
+                  </a>
+                );
+              }
+              return (
+                <button
+                  key={view}
+                  onClick={() => handleViewChange(view)}
+                  className={`text-[15px] font-bahnschrift font-semibold tracking-wider uppercase transition-colors relative py-1 cursor-pointer ${
+                    activeView === view 
+                      ? "text-rose-600 font-bold" 
+                      : "text-stone-500 dark:text-stone-300 hover:text-rose-600 dark:hover:text-rose-500"
+                  }`}
+                >
+                  {view}
+                  {activeView === view && (
+                    <motion.div 
+                      layoutId="activeIndicator" 
+                      className="absolute bottom-0 inset-x-0 h-0.5 bg-rose-600" 
+                    />
+                  )}
+                </button>
+              );
+            })}
 
             <button
               onClick={() => handleViewChange("Admin Panel")}
@@ -911,19 +980,35 @@ export default function App() {
                 <span>Search Website</span>
               </button>
 
-              {(["Home", "Our Family", "Notice", "Cloud", "Academic Tools", "Gallery", "NotePark"] as ViewType[]).map((view) => (
-                <button
-                  key={view}
-                  onClick={() => handleViewChange(view)}
-                  className={`text-sm font-bahnschrift font-semibold tracking-widest uppercase transition-colors py-2 text-left border-b border-gray-100 dark:border-zinc-900 cursor-pointer ${
-                    activeView === view 
-                      ? "text-rose-500 font-bold" 
-                      : "text-gray-600 dark:text-gray-300 hover:text-rose-500"
-                  }`}
-                >
-                  {view}
-                </button>
-              ))}
+              {(["Home", "Our Family", "Notice", "Cloud", "Academic Tools", "Gallery"] as any[]).map((view) => {
+                if (view === "Gallery") {
+                  return (
+                    <a
+                      key={view}
+                      href="https://sites.google.com/view/ruet-urp-25-gallery/home"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      onClick={() => setMobileMenuOpen(false)}
+                      className="text-sm font-bahnschrift font-semibold tracking-widest uppercase transition-colors py-2 text-left border-b border-gray-100 dark:border-zinc-900 cursor-pointer text-gray-600 dark:text-gray-300 hover:text-rose-500 block"
+                    >
+                      Gallery
+                    </a>
+                  );
+                }
+                return (
+                  <button
+                    key={view}
+                    onClick={() => handleViewChange(view)}
+                    className={`text-sm font-bahnschrift font-semibold tracking-widest uppercase transition-colors py-2 text-left border-b border-gray-100 dark:border-zinc-900 cursor-pointer ${
+                      activeView === view 
+                        ? "text-rose-500 font-bold" 
+                        : "text-gray-600 dark:text-gray-300 hover:text-rose-500"
+                    }`}
+                  >
+                    {view}
+                  </button>
+                );
+              })}
 
               <button
                 onClick={() => handleViewChange("Admin Panel")}
@@ -941,7 +1026,7 @@ export default function App() {
       </AnimatePresence>
 
       {/* Main Content Area - Animated Switcher */}
-      <main className="flex-1 w-full px-6 md:px-12 py-10 relative z-10">
+      <main className={`flex-1 w-full relative z-10 ${activeView === "Home" ? "" : "px-6 md:px-12 py-10"}`}>
         <AnimatePresence mode="wait">
           <motion.div
             key={activeView}
@@ -1150,7 +1235,6 @@ export default function App() {
                           }`}>
                             {res.type === "Student" && <User className="w-4 h-4 text-rose-500" />}
                             {res.type === "Notice" && <FileText className="w-4 h-4 text-orange-500" />}
-                            {res.type === "NotePark" && <BookOpen className="w-4 h-4 text-indigo-500" />}
                             {res.type === "Gallery" && <ImageIcon className="w-4 h-4 text-emerald-500" />}
                             {res.type === "AcademicTool" && <Compass className="w-4 h-4 text-purple-500" />}
                           </div>
@@ -1208,6 +1292,16 @@ export default function App() {
               </div>
             </motion.div>
           </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Polish Greeting Toast */}
+      <AnimatePresence>
+        {showGreetingToast && (
+          <GreetingToast 
+            message={greetingMessage} 
+            onClose={() => setShowGreetingToast(false)} 
+          />
         )}
       </AnimatePresence>
     </div>

@@ -19,7 +19,7 @@ interface FooterProps {
   contactInfo: { title?: string; email: string; phone: string }[] | { email: string; phone: string };
   adminSettings: AdminSettings;
   onlinePlatforms: { name: string; url: string }[];
-  onNavigate: (view: "Home" | "Our Family" | "Notice" | "Cloud" | "Academic Tools" | "Gallery" | "NotePark" | "Admin Panel") => void;
+  onNavigate: (view: "Home" | "Our Family" | "Notice" | "Cloud" | "Academic Tools" | "Gallery" | "Admin Panel") => void;
 }
 
 export default function Footer({ contactInfo, adminSettings, onlinePlatforms, onNavigate }: FooterProps) {

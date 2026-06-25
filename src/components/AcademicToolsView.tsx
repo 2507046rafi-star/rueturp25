@@ -66,12 +66,10 @@ export default function AcademicToolsView() {
       <div className="grid md:grid-cols-2 gap-6">
         {tools.map((tool) => {
           const IconComponent = tool.icon;
-          return (
-            <motion.div
-              key={tool.id}
-              whileHover={{ y: -4, boxShadow: "0 8px 16px -8px rgba(0,0,0,0.1)" }}
-              className={`p-6 rounded-2xl bg-white dark:bg-stone-950 border border-stone-200 dark:border-stone-850 text-left flex flex-col justify-between h-56 relative group card-hover`}
-            >
+          const isCoverGenerator = tool.id === "cover";
+
+          const cardContent = (
+            <div className="flex flex-col justify-between h-full w-full">
               <div>
                 {/* Header Icon + Badge */}
                 <div className="flex justify-between items-start">
@@ -101,6 +99,30 @@ export default function AcademicToolsView() {
               >
                 Access Channel <ExternalLink className="w-3.5 h-3.5" />
               </a>
+            </div>
+          );
+
+          if (isCoverGenerator) {
+            return (
+              <motion.div
+                key={tool.id}
+                whileHover={{ y: -4 }}
+                className="subtle-animated-border text-left relative group h-56 cursor-pointer"
+              >
+                <div className="subtle-animated-inner p-6 h-full flex flex-col justify-between bg-white dark:bg-stone-950">
+                  {cardContent}
+                </div>
+              </motion.div>
+            );
+          }
+
+          return (
+            <motion.div
+              key={tool.id}
+              whileHover={{ y: -4, boxShadow: "0 8px 16px -8px rgba(0,0,0,0.1)" }}
+              className="p-6 rounded-2xl bg-white dark:bg-stone-950 border border-stone-200 dark:border-stone-850 text-left flex flex-col justify-between h-56 relative group card-hover"
+            >
+              {cardContent}
             </motion.div>
           );
         })}

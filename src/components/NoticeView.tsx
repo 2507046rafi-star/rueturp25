@@ -13,7 +13,8 @@ import {
   Tag,
   Image as ImageIcon,
   Download,
-  X
+  X,
+  Printer
 } from "lucide-react";
 import { Notice } from "../types";
 
@@ -126,6 +127,192 @@ export default function NoticeView({ notices, onViewImage }: NoticeViewProps) {
     return imgExtensions.some(ext => name.toLowerCase().endsWith(ext));
   };
 
+  const handlePrintNotice = (notice: Notice) => {
+    const iframe = document.createElement("iframe");
+    iframe.style.position = "fixed";
+    iframe.style.right = "0";
+    iframe.style.bottom = "0";
+    iframe.style.width = "0";
+    iframe.style.height = "0";
+    iframe.style.border = "0";
+    document.body.appendChild(iframe);
+
+    const doc = iframe.contentWindow?.document || iframe.contentDocument;
+    if (!doc) return;
+
+    const html = `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <title>Notice - ${notice.title}</title>
+        <style>
+          @media print {
+            body {
+              -webkit-print-color-adjust: exact;
+              print-color-adjust: exact;
+            }
+          }
+          body {
+            font-family: "Georgia", "Times New Roman", serif;
+            color: #111;
+            line-height: 1.6;
+            margin: 0;
+            padding: 40px;
+            background-color: #fff;
+          }
+          .letterhead {
+            text-align: center;
+            margin-bottom: 25px;
+            border-bottom: 3px double #222;
+            padding-bottom: 12px;
+          }
+          .letterhead h1 {
+            font-size: 19px;
+            font-weight: bold;
+            margin: 0 0 4px 0;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+          }
+          .letterhead h2 {
+            font-size: 14px;
+            font-weight: normal;
+            margin: 0 0 4px 0;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+          }
+          .letterhead p {
+            font-size: 11px;
+            margin: 0;
+            color: #444;
+            font-style: italic;
+          }
+          .notice-header {
+            margin-bottom: 25px;
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            font-size: 12px;
+            font-family: "Courier New", Courier, monospace;
+            border-bottom: 1px solid #ddd;
+            padding-bottom: 6px;
+          }
+          .notice-title-box {
+            text-align: center;
+            margin-bottom: 25px;
+          }
+          .notice-title {
+            display: inline-block;
+            font-size: 20px;
+            font-weight: bold;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            border-bottom: 2px solid #000;
+            padding-bottom: 3px;
+            margin: 0;
+          }
+          .subject-line {
+            font-size: 15px;
+            font-weight: bold;
+            margin-bottom: 25px;
+            text-transform: uppercase;
+          }
+          .notice-content {
+            font-size: 14.5px;
+            text-align: justify;
+            white-space: pre-line;
+            margin-bottom: 40px;
+          }
+          .notice-footer {
+            display: flex;
+            justify-content: flex-end;
+            margin-top: 50px;
+            page-break-inside: avoid;
+          }
+          .signature-area {
+            text-align: center;
+            width: 240px;
+          }
+          .signature-line {
+            border-top: 1px solid #000;
+            margin-top: 35px;
+            padding-top: 4px;
+          }
+          .signature-name {
+            font-weight: bold;
+            font-size: 13.5px;
+          }
+          .signature-title {
+            font-size: 11.5px;
+            color: #555;
+          }
+          .portal-tag {
+            text-align: center;
+            margin-top: 80px;
+            font-size: 9px;
+            color: #888;
+            border-top: 1px dashed #ccc;
+            padding-top: 8px;
+            font-family: "Courier New", Courier, monospace;
+            page-break-inside: avoid;
+          }
+        </style>
+      </head>
+      <body>
+        <div class="letterhead">
+          <h1>Department of Urban & Regional Planning</h1>
+          <h2>Rajshahi University of Engineering & Technology</h2>
+          <p>Rajshahi-6204, Bangladesh</p>
+        </div>
+        
+        <div class="notice-header">
+          <div>Ref: RUET/URP-25/N-${String(notice.id || 'DOC').substring(0, 6).toUpperCase()}</div>
+          <div>Date: ${formatDate(notice.publish_date || notice.date)}</div>
+        </div>
+        
+        <div class="notice-title-box">
+          <h3 class="notice-title">Official Notice</h3>
+        </div>
+        
+        <div class="subject-line">
+          Subject: ${notice.title}
+        </div>
+        
+        <div class="notice-content">
+          ${notice.content}
+        </div>
+        
+        <div class="notice-footer">
+          <div class="signature-area">
+            <div class="signature-line"></div>
+            <div class="signature-name">${notice.author}</div>
+            <div class="signature-title">Authorized Representative / Author</div>
+            <div class="signature-title">RUET URP '25 Series</div>
+          </div>
+        </div>
+        
+        <div class="portal-tag">
+          This document was generated and printed officially from the RUET URP'25 Academic Portal.<br>
+          Verify original version online at: ${window.location.origin}
+        </div>
+      </body>
+      </html>
+    `;
+
+    doc.open();
+    doc.write(html);
+    doc.close();
+
+    iframe.contentWindow?.focus();
+    setTimeout(() => {
+      iframe.contentWindow?.print();
+      setTimeout(() => {
+        if (document.body.contains(iframe)) {
+          document.body.removeChild(iframe);
+        }
+      }, 1000);
+    }, 300);
+  };
+
   return (
     <div id="notice-view" className="space-y-8 w-full max-w-none px-4">
       {/* Header Section */}
@@ -229,116 +416,139 @@ export default function NoticeView({ notices, onViewImage }: NoticeViewProps) {
             const imageAttachments = noticeAttachments.filter(att => att.type !== "tags" && isImageAttachment(att));
             const fileAttachments = noticeAttachments.filter(att => att.type !== "tags" && !isImageAttachment(att));
 
+            const cardContent = (
+              <div className="space-y-4">
+                {/* Meta details & tags list */}
+                <div className="flex flex-wrap items-center justify-between gap-4">
+                  <div className="flex flex-wrap gap-4 text-xs font-mono text-gray-400">
+                    <span className="flex items-center gap-1.5">
+                      <Calendar className="w-3.5 h-3.5 text-rose-400 shrink-0" />
+                      {notice.publish_date 
+                        ? `Published: ${formatDate(notice.publish_date)}${notice.publish_time ? ` at ${notice.publish_time}` : ""}`
+                        : formatDate(notice.date)
+                      }
+                    </span>
+                    <span className="flex items-center gap-1.5">
+                      <User className="w-3.5 h-3.5 text-orange-400 shrink-0" />
+                      Authored by: {notice.author}
+                    </span>
+                  </div>
+
+                  {/* Render tag pill & Print button inside notice cards */}
+                  <div className="flex flex-wrap gap-1.5 items-center">
+                    <button
+                      onClick={() => handlePrintNotice(notice)}
+                      className="inline-flex items-center gap-1 px-2.5 py-1 rounded-xl bg-rose-50 hover:bg-rose-100 dark:bg-rose-950/40 dark:hover:bg-rose-900/60 border border-rose-200 dark:border-rose-900/50 text-rose-600 dark:text-rose-400 text-[10px] font-mono font-bold uppercase tracking-wider transition-all duration-200 cursor-pointer shadow-sm hover:scale-[1.02] hover:shadow"
+                      title="Print official document"
+                    >
+                      <Printer className="w-3 h-3 text-rose-500 shrink-0" />
+                      <span>Print Document</span>
+                    </button>
+                    {tags.map((tg, i) => (
+                      <span 
+                        key={i} 
+                        className="px-2.5 py-1 rounded-xl text-[9px] font-mono font-bold bg-stone-100 dark:bg-stone-900 border border-stone-200 dark:border-stone-800 text-stone-500 dark:text-stone-400 uppercase tracking-wider"
+                      >
+                        {tg}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Title */}
+                <h3 className="font-display font-bold text-lg sm:text-xl text-stone-900 dark:text-white uppercase tracking-tight">
+                  {notice.title}
+                </h3>
+
+                {/* Content (Styled in Arial) */}
+                <p className="text-sm text-stone-700 dark:text-stone-200 leading-relaxed font-normal font-arial whitespace-pre-line">
+                  {notice.content}
+                </p>
+
+                {/* Display inline image attachments */}
+                {imageAttachments.length > 0 && (
+                  <div className="pt-3">
+                    <span className="text-[10px] font-mono font-bold tracking-wider text-rose-500 uppercase block mb-2 flex items-center gap-1">
+                      <ImageIcon className="w-3.5 h-3.5" /> Shared Images ({imageAttachments.length})
+                    </span>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
+                      {imageAttachments.map((img, i) => (
+                        <div 
+                          key={i} 
+                          className="relative group rounded-xl border border-stone-200 dark:border-stone-800 overflow-hidden bg-stone-100 dark:bg-stone-900 aspect-[4/3] shadow-sm cursor-zoom-in"
+                          onClick={() => onViewImage?.(img.url, `${notice.title} - ${img.name}`)}
+                        >
+                          <img 
+                            src={img.url} 
+                            alt={img.name} 
+                            referrerPolicy="no-referrer"
+                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-350 select-none"
+                            title="Click to expand"
+                          />
+                          <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-end p-2.5">
+                            <span className="text-[10px] font-mono text-white truncate w-full">{img.name}</span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Display file attachments ("flies") */}
+                {fileAttachments.length > 0 && (
+                  <div className="pt-4 border-t border-stone-100 dark:border-stone-850/85 mt-4 space-y-3">
+                    <span className="text-[10px] font-mono font-bold tracking-wider text-orange-500 uppercase block flex items-center gap-1">
+                      <FileText className="w-3.5 h-3.5 text-rose-500 shrink-0" /> Shared Files & Materials ({fileAttachments.length})
+                    </span>
+                    <div className="flex flex-wrap gap-3">
+                      {fileAttachments.map((att, idx) => (
+                        <a
+                          key={idx}
+                          href={att.url}
+                          download={att.name}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl bg-stone-50 hover:bg-stone-100 dark:bg-stone-900/45 dark:hover:bg-stone-900 text-xs font-semibold text-stone-700 dark:text-stone-300 border border-stone-200 dark:border-stone-800 transition shadow-sm cursor-pointer hover:shadow group"
+                        >
+                          <Download className="w-3.5 h-3.5 text-rose-500 group-hover:translate-y-0.5 transition-transform shrink-0" />
+                          <span className="line-clamp-1 max-w-[200px]">{att.name}</span>
+                        </a>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            );
+
+            if (notice.is_latest) {
+              return (
+                <motion.div
+                  key={notice.id}
+                  initial={{ opacity: 0, y: 15 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: idx * 0.08 }}
+                  className="premium-border-container shadow-md hover:shadow-[0_12px_24px_-8px_rgba(244,63,94,0.25)] hover-lift transition-all duration-300"
+                >
+                  <div className="premium-border-inner bg-white dark:bg-stone-950 p-6 relative overflow-hidden text-left h-full">
+                    <div className="absolute top-0 right-0 bg-gradient-to-l from-rose-500 to-orange-500 text-white px-3 py-1 text-[9px] font-mono font-bold tracking-widest uppercase rounded-bl-xl flex items-center gap-1 z-10">
+                      <Bookmark className="w-3.5 h-3.5 fill-white" /> LATEST
+                    </div>
+                    {cardContent}
+                  </div>
+                </motion.div>
+              );
+            }
+
             return (
               <motion.div
                 key={notice.id}
                 initial={{ opacity: 0, y: 15 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: idx * 0.08 }}
-                className={`bg-white dark:bg-stone-950 rounded-2xl p-6 relative overflow-hidden card-hover text-left shadow-sm transition-all duration-300 ${
-                  notice.is_latest 
-                    ? "border-2 border-rose-500/40 shadow-[0_0_20px_rgba(244,63,94,0.18)] bg-gradient-to-b from-rose-500/[0.02] to-transparent" 
-                    : "border border-stone-200 dark:border-stone-850"
-                }`}
+                className="premium-border-container shadow-sm hover:shadow-[0_8px_20px_-8px_rgba(244,63,94,0.20)] hover-lift transition-all duration-300"
               >
-                {notice.is_latest && (
-                  <div className="absolute top-0 right-0 bg-gradient-to-l from-rose-500 to-orange-500 text-white px-3 py-1 text-[9px] font-mono font-bold tracking-widest uppercase rounded-bl-xl flex items-center gap-1">
-                    <Bookmark className="w-3.5 h-3.5 fill-white" /> LATEST
-                  </div>
-                )}
-
-                <div className="space-y-4">
-                  {/* Meta details & tags list */}
-                  <div className="flex flex-wrap items-center justify-between gap-4">
-                    <div className="flex flex-wrap gap-4 text-xs font-mono text-gray-400">
-                      <span className="flex items-center gap-1.5">
-                        <Calendar className="w-3.5 h-3.5 text-rose-400 shrink-0" />
-                        {notice.publish_date 
-                          ? `Published: ${formatDate(notice.publish_date)}${notice.publish_time ? ` at ${notice.publish_time}` : ""}`
-                          : formatDate(notice.date)
-                        }
-                      </span>
-                      <span className="flex items-center gap-1.5">
-                        <User className="w-3.5 h-3.5 text-orange-400 shrink-0" />
-                        Authored by: {notice.author}
-                      </span>
-                    </div>
-
-                    {/* Render tag pill inside notice cards */}
-                    <div className="flex flex-wrap gap-1.5">
-                      {tags.map((tg, i) => (
-                        <span 
-                          key={i} 
-                          className="px-2 py-0.5 rounded text-[9px] font-mono font-bold bg-stone-100 dark:bg-stone-900 border border-stone-200 dark:border-stone-800 text-stone-500 dark:text-stone-400 uppercase tracking-wider"
-                        >
-                          {tg}
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-
-                  {/* Title */}
-                  <h3 className="font-display font-bold text-lg sm:text-xl text-stone-900 dark:text-white uppercase tracking-tight">
-                    {notice.title}
-                  </h3>
-
-                  {/* Content (Styled in Arial) */}
-                  <p className="text-sm text-stone-700 dark:text-stone-200 leading-relaxed font-normal font-arial whitespace-pre-line">
-                    {notice.content}
-                  </p>
-
-                  {/* Display inline image attachments */}
-                  {imageAttachments.length > 0 && (
-                    <div className="pt-3">
-                      <span className="text-[10px] font-mono font-bold tracking-wider text-rose-500 uppercase block mb-2 flex items-center gap-1">
-                        <ImageIcon className="w-3.5 h-3.5" /> Shared Images ({imageAttachments.length})
-                      </span>
-                      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
-                        {imageAttachments.map((img, i) => (
-                          <div 
-                            key={i} 
-                            className="relative group rounded-xl border border-stone-200 dark:border-stone-800 overflow-hidden bg-stone-100 dark:bg-stone-900 aspect-[4/3] shadow-sm cursor-zoom-in"
-                            onClick={() => onViewImage?.(img.url, `${notice.title} - ${img.name}`)}
-                          >
-                            <img 
-                              src={img.url} 
-                              alt={img.name} 
-                              referrerPolicy="no-referrer"
-                              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-350 select-none"
-                              title="Click to expand"
-                            />
-                            <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-end p-2.5">
-                              <span className="text-[10px] font-mono text-white truncate w-full">{img.name}</span>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Display file attachments ("flies") */}
-                  {fileAttachments.length > 0 && (
-                    <div className="pt-4 border-t border-stone-100 dark:border-stone-850/85 mt-4 space-y-3">
-                      <span className="text-[10px] font-mono font-bold tracking-wider text-orange-500 uppercase block flex items-center gap-1">
-                        <FileText className="w-3.5 h-3.5 text-rose-500 shrink-0" /> Shared Files & Materials ({fileAttachments.length})
-                      </span>
-                      <div className="flex flex-wrap gap-3">
-                        {fileAttachments.map((att, idx) => (
-                          <a
-                            key={idx}
-                            href={att.url}
-                            download={att.name}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl bg-stone-50 hover:bg-stone-100 dark:bg-stone-900/45 dark:hover:bg-stone-900 text-xs font-semibold text-stone-700 dark:text-stone-300 border border-stone-200 dark:border-stone-800 transition shadow-sm cursor-pointer hover:shadow group"
-                          >
-                            <Download className="w-3.5 h-3.5 text-rose-500 group-hover:translate-y-0.5 transition-transform shrink-0" />
-                            <span className="line-clamp-1 max-w-[200px]">{att.name}</span>
-                          </a>
-                        ))}
-                      </div>
-                    </div>
-                  )}
+                <div className="premium-border-inner bg-white dark:bg-stone-950 p-6 relative overflow-hidden text-left h-full">
+                  {cardContent}
                 </div>
               </motion.div>
             );
