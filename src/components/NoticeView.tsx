@@ -235,11 +235,15 @@ export default function NoticeView({ notices, onViewImage }: NoticeViewProps) {
                 initial={{ opacity: 0, y: 15 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: idx * 0.08 }}
-                className="bg-white dark:bg-stone-950 border border-stone-200 dark:border-stone-850 rounded-2xl p-6 relative overflow-hidden card-hover text-left shadow-sm"
+                className={`bg-white dark:bg-stone-950 rounded-2xl p-6 relative overflow-hidden card-hover text-left shadow-sm transition-all duration-300 ${
+                  notice.is_latest 
+                    ? "border-2 border-rose-500/40 shadow-[0_0_20px_rgba(244,63,94,0.18)] bg-gradient-to-b from-rose-500/[0.02] to-transparent" 
+                    : "border border-stone-200 dark:border-stone-850"
+                }`}
               >
-                {idx === 0 && !noticeSearch && selectedTag === "All" && (
+                {notice.is_latest && (
                   <div className="absolute top-0 right-0 bg-gradient-to-l from-rose-500 to-orange-500 text-white px-3 py-1 text-[9px] font-mono font-bold tracking-widest uppercase rounded-bl-xl flex items-center gap-1">
-                    <Bookmark className="w-3 h-3 fill-white" /> LATEST
+                    <Bookmark className="w-3.5 h-3.5 fill-white" /> LATEST
                   </div>
                 )}
 
@@ -249,7 +253,10 @@ export default function NoticeView({ notices, onViewImage }: NoticeViewProps) {
                     <div className="flex flex-wrap gap-4 text-xs font-mono text-gray-400">
                       <span className="flex items-center gap-1.5">
                         <Calendar className="w-3.5 h-3.5 text-rose-400 shrink-0" />
-                        {formatDate(notice.date)}
+                        {notice.publish_date 
+                          ? `Published: ${formatDate(notice.publish_date)}${notice.publish_time ? ` at ${notice.publish_time}` : ""}`
+                          : formatDate(notice.date)
+                        }
                       </span>
                       <span className="flex items-center gap-1.5">
                         <User className="w-3.5 h-3.5 text-orange-400 shrink-0" />

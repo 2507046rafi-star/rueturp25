@@ -16,15 +16,19 @@ export interface Notice {
   date: string;
   author: string;
   attachments?: { name: string; url: string; type: string }[];
+  publish_date?: string;
+  publish_time?: string;
+  is_latest?: boolean;
 }
 
-export interface GalleryItem {
+export interface InsiderTopic {
   id: string;
   title: string;
-  caption: string; // up to 150 words
-  imageUrl: string;
-  category: "Academic" | "Extra-curriculum";
-  date: string;
+  short: string;
+  content: string;
+  icon: string; // e.g., "Map", "Layers", "Compass", "Camera", "Lightbulb", "Users", "Megaphone", "Globe"
+  bg: string;   // e.g., "from-blue-600/20 to-indigo-600/20 border-blue-500/30"
+  attachments?: { name: string; url: string; type: string }[];
 }
 
 export interface AdminSettings {
@@ -33,25 +37,12 @@ export interface AdminSettings {
   policy: string;
 }
 
-export interface NoteParkItem {
-  id: string;
-  class_date: string;
-  class_time: string;
-  subject_name: string;
-  class_period: string;
-  class_teacher: string;
-  attachments?: { name: string; url: string; type: "file" | "photo" | "link" }[];
-  created_at?: string;
-}
-
 export type ViewType = 
   | "Home" 
   | "Our Family" 
   | "Notice" 
   | "Cloud" 
   | "Academic Tools" 
-  | "Gallery" 
-  | "NotePark"
   | "Admin Panel";
 
 export const safeStorage = {

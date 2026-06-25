@@ -18,15 +18,17 @@ import {
   Bookmark,
   Sparkles
 } from "lucide-react";
-import { Notice, Student, safeStorage } from "../types";
+import { Notice, Student, InsiderTopic, safeStorage } from "../types";
+import * as Icons from "lucide-react";
 
 interface HomeViewProps {
   notices: Notice[];
   students: Student[];
-  onNavigate: (view: "Home" | "Our Family" | "Notice" | "Cloud" | "Academic Tools" | "Gallery" | "Admin Panel") => void;
+  insiders: InsiderTopic[];
+  onNavigate: (view: "Home" | "Our Family" | "Notice" | "Cloud" | "Academic Tools" | "Admin Panel") => void;
 }
 
-export default function HomeView({ notices, students, onNavigate }: HomeViewProps) {
+export default function HomeView({ notices, students, insiders = [], onNavigate }: HomeViewProps) {
   const [selectedInsider, setSelectedInsider] = useState<string | null>(null);
   
   // Background images slideshow for Hero section
@@ -76,126 +78,36 @@ export default function HomeView({ notices, students, onNavigate }: HomeViewProp
     content: "Check back later for official announcements."
   };
 
-  const insiders = [
-    {
-      id: "gis",
-      title: "GIS Club",
-      short: "Spatial Buffering & Advanced Geoprocessing",
-      icon: Map,
-      bg: "from-blue-600/20 to-indigo-600/20 border-blue-500/30",
+  // Dynamically resolve icons and construct insiders array
+  const dynamicInsiders = insiders.map(ins => {
+    const IconComponent = (Icons as any)[ins.icon] || Icons.Map;
+    return {
+      id: ins.id,
+      title: ins.title,
+      short: ins.short,
+      icon: IconComponent,
+      bg: ins.bg || "from-rose-500/10 to-orange-500/10 border-rose-500/20",
+      attachments: ins.attachments || [],
       content: (
         <div className="space-y-4">
-          <p className="text-gray-600 dark:text-gray-300 text-sm">
-            The GIS Club analyzes geographic patterns to draft strategic regional masterplans. 
-            We utilize ArcMap, QGIS, and Google Earth Engine to build layers, analyze spatial buffering, 
-            and design smart-city models.
-          </p>
-          <div className="p-4 rounded-xl bg-gray-100 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 font-mono text-xs text-rose-500 space-y-2">
-            <div className="flex justify-between border-b border-gray-200 dark:border-gray-700 pb-1">
-              <span>Projection System:</span>
-              <span>BUTM (Bangladesh Universal Transverse Mercator)</span>
-            </div>
-            <div className="flex justify-between border-b border-gray-200 dark:border-gray-700 pb-1">
-              <span>Standard Datum:</span>
-              <span>BGD2006 / WGS 84</span>
-            </div>
-            <div className="flex justify-between">
-              <span>Main Operations:</span>
-              <span>Vector Clipping, Density Heatmaps, NDVI Analytics</span>
-            </div>
-          </div>
-          <div className="p-3 bg-gradient-to-r from-rose-500/10 to-orange-500/10 rounded-lg text-xs border border-rose-500/20">
-            <strong>Current Research:</strong> Multi-Criteria Decision Analysis (MCDA) for landfill allocation in the Rajshahi Metropolitan area.
+          <div className="text-gray-650 dark:text-gray-300 text-sm leading-relaxed whitespace-pre-wrap">
+            {ins.content}
           </div>
         </div>
       )
-    },
-    {
-      id: "core",
-      title: "URP Core",
-      short: "Urban Planning & Zoning Policies",
-      icon: Layers,
-      bg: "from-rose-600/20 to-red-600/20 border-rose-500/30",
-      content: (
-        <div className="space-y-4">
-          <p className="text-gray-600 dark:text-gray-300 text-sm">
-            Focuses on structural zoning regulations, building code compliance, and Master Plan structures. 
-            Understanding land use controls and zoning bylaws that regulate Bangladesh's urban growth.
-          </p>
-          <div className="grid grid-cols-2 gap-2 text-xs font-mono">
-            <div className="p-3 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
-              <span className="text-orange-500 font-semibold block mb-1">FAR Calculation</span>
-              Floor Area Ratio constraints for modern high-rise residences.
-            </div>
-            <div className="p-3 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
-              <span className="text-rose-500 font-semibold block mb-1">Setback Rules</span>
-              Min distance from street line for visual harmony.
-            </div>
-          </div>
-          <div className="text-xs text-gray-500 dark:text-gray-400">
-            *Based on Bangladesh National Building Code (BNBC) & Rajshahi Master Plan Guidelines.
-          </div>
-        </div>
-      )
-    },
-    {
-      id: "arch",
-      title: "Architecture Studio",
-      short: "Creative Drafting & 3D Modeling",
-      icon: Compass,
-      bg: "from-amber-600/20 to-orange-600/20 border-orange-500/30",
-      content: (
-        <div className="space-y-4">
-          <p className="text-gray-600 dark:text-gray-300 text-sm">
-            Where urban scale meets fine aesthetics. We draft isometric blueprints, study spatial forms, 
-            and render models using SketchUp, AutoCAD, and Revit.
-          </p>
-          <div className="p-4 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg space-y-2">
-            <span className="text-xs text-gray-400 block font-mono">STUDIO PROJECT #01: SUSTAINABLE COMMUNITY RECREATION PARK</span>
-            <div className="w-full bg-gray-200 dark:bg-gray-700 h-2 rounded-full overflow-hidden">
-              <div className="bg-rose-500 h-full w-4/5"></div>
-            </div>
-            <div className="flex justify-between text-[11px] font-mono text-gray-500">
-              <span>80% Render Complete</span>
-              <span>Due: Thursday</span>
-            </div>
-          </div>
-          <p className="text-xs italic text-gray-500">
-            "A town is not just a collection of buildings, but a living body shaped by community patterns."
-          </p>
-        </div>
-      )
-    },
-    {
-      id: "photography",
-      title: "Photography Society",
-      short: "Documenting Spatial Elements & City Life",
-      icon: Camera,
-      bg: "from-purple-600/20 to-pink-600/20 border-purple-500/30",
-      content: (
-        <div className="space-y-4">
-          <p className="text-gray-600 dark:text-gray-300 text-sm">
-            Capturing the architectural textures, riverbank horizons, and urban environments. 
-            We organize batch photography walks along the Padma river and the red-brick RUET campus.
-          </p>
-          <div className="grid grid-cols-3 gap-2">
-            <div className="h-16 rounded bg-cover bg-center" style={{ backgroundImage: `url('https://images.unsplash.com/photo-1503387762-592deb58ef4e?auto=format&fit=crop&w=150&q=80')` }} />
-            <div className="h-16 rounded bg-cover bg-center" style={{ backgroundImage: `url('https://images.unsplash.com/photo-1504307651254-35680f356dfd?auto=format&fit=crop&w=150&q=80')` }} />
-            <div className="h-16 rounded bg-cover bg-center" style={{ backgroundImage: `url('https://images.unsplash.com/photo-1511795409834-ef04bbd61622?auto=format&fit=crop&w=150&q=80')` }} />
-          </div>
-          <div className="text-xs font-mono text-gray-400 flex justify-between">
-            <span>Lens Focus: 35mm / 50mm Street</span>
-            <span>Active Members: 18</span>
-          </div>
-        </div>
-      )
-    },
+    };
+  });
+
+  // Always append the brainstorm board at the end of the insiders list
+  const allInsiders = [
+    ...dynamicInsiders,
     {
       id: "brainstorm",
       title: "Brainstorm Workspace",
       short: "Dynamic Smart-City Suggestion Board",
-      icon: Lightbulb,
+      icon: Icons.Lightbulb,
       bg: "from-emerald-600/20 to-teal-600/20 border-emerald-500/30",
+      attachments: [],
       content: (
         <div className="space-y-4">
           <p className="text-gray-600 dark:text-gray-300 text-sm">
@@ -213,7 +125,7 @@ export default function HomeView({ notices, students, onNavigate }: HomeViewProp
               type="submit" 
               className="px-3 py-1.5 rounded-lg bg-rose-500 text-white text-xs font-medium hover:bg-rose-600 transition flex items-center gap-1 cursor-pointer"
             >
-              <Plus className="w-3 h-3" /> Add
+              <Icons.Plus className="w-3 h-3" /> Add
             </button>
           </form>
 
@@ -224,7 +136,7 @@ export default function HomeView({ notices, students, onNavigate }: HomeViewProp
                 className="p-2.5 rounded-lg bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-xs flex justify-between gap-3 group relative hover:border-rose-400/50"
               >
                 <div className="flex gap-2">
-                  <Bookmark className="w-3.5 h-3.5 text-orange-500 shrink-0 mt-0.5" />
+                  <Icons.Bookmark className="w-3.5 h-3.5 text-orange-500 shrink-0 mt-0.5" />
                   <span className="text-gray-700 dark:text-gray-200 leading-relaxed">{idea}</span>
                 </div>
                 <button 
@@ -232,7 +144,7 @@ export default function HomeView({ notices, students, onNavigate }: HomeViewProp
                   className="text-gray-400 hover:text-red-500 shrink-0 self-center opacity-0 group-hover:opacity-100 transition cursor-pointer"
                   title="Remove idea"
                 >
-                  <Trash2 className="w-3.5 h-3.5" />
+                  <Icons.Trash2 className="w-3.5 h-3.5" />
                 </button>
               </div>
             ))}
@@ -391,7 +303,7 @@ export default function HomeView({ notices, students, onNavigate }: HomeViewProp
         </div>
 
         <div className="grid md:grid-cols-3 gap-6">
-          {insiders.map((insider) => {
+          {allInsiders.map((insider) => {
             const IconComponent = insider.icon;
             return (
               <motion.div
@@ -423,7 +335,7 @@ export default function HomeView({ notices, students, onNavigate }: HomeViewProp
       {/* SpaceX Styled Insider Modal */}
       <AnimatePresence>
         {selectedInsider && (() => {
-          const item = insiders.find(i => i.id === selectedInsider);
+          const item = allInsiders.find(i => i.id === selectedInsider);
           if (!item) return null;
           const Icon = item.icon;
           return (
@@ -452,8 +364,51 @@ export default function HomeView({ notices, students, onNavigate }: HomeViewProp
                 </div>
 
                 {/* Modal Body */}
-                <div className="p-6">
+                <div className="p-6 overflow-y-auto max-h-[50vh]">
                   {item.content}
+
+                  {/* Dynamic Attachments List */}
+                  {item.attachments && item.attachments.length > 0 && (
+                    <div className="mt-6 pt-4 border-t border-stone-200 dark:border-stone-850 space-y-3 text-left">
+                      <span className="text-[10px] font-mono font-bold uppercase text-stone-400 block tracking-wider">
+                        Topic Resources & Files ({item.attachments.length})
+                      </span>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        {item.attachments.map((att: any, attIdx: number) => {
+                          const isImage = att.type?.startsWith("image/");
+                          return (
+                            <div 
+                              key={attIdx} 
+                              className="p-3 rounded-xl bg-stone-50 dark:bg-zinc-900 border border-stone-200/60 dark:border-zinc-800 flex flex-col justify-between gap-2.5 text-xs"
+                            >
+                              {isImage ? (
+                                <img 
+                                  src={att.url} 
+                                  alt={att.name} 
+                                  className="w-full h-24 object-cover rounded-lg mb-1" 
+                                  referrerPolicy="no-referrer" 
+                                />
+                              ) : null}
+                              <div>
+                                <span className="font-mono font-bold text-stone-700 dark:text-stone-300 truncate block text-[11px]" title={att.name}>
+                                  {att.name}
+                                </span>
+                              </div>
+                              <a 
+                                href={att.url} 
+                                download={att.name} 
+                                target="_blank" 
+                                rel="noopener noreferrer" 
+                                className="text-[10px] font-bold text-rose-500 hover:underline uppercase self-start mt-1 flex items-center gap-1 cursor-pointer"
+                              >
+                                Download / View
+                              </a>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
                 </div>
 
                 {/* Footer buttons */}

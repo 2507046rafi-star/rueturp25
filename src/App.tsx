@@ -21,11 +21,11 @@ import {
   CornerDownLeft
 } from "lucide-react";
 
-import { Student, Notice, GalleryItem, AdminSettings, ViewType, safeStorage, safeSessionStorage } from "./types";
+import { Student, Notice, InsiderTopic, AdminSettings, ViewType, safeStorage, safeSessionStorage } from "./types";
 import { 
   DEFAULT_STUDENTS, 
   DEFAULT_NOTICES, 
-  DEFAULT_GALLERY, 
+  DEFAULT_INSIDERS, 
   DEFAULT_ADMIN_SETTINGS 
 } from "./data/defaultData";
 import { supabase } from "./lib/supabaseClient";
@@ -36,9 +36,7 @@ import OurFamilyView from "./components/OurFamilyView";
 import NoticeView from "./components/NoticeView";
 import CloudView from "./components/CloudView";
 import AcademicToolsView from "./components/AcademicToolsView";
-import GalleryView from "./components/GalleryView";
 import AdminPanelView from "./components/AdminPanelView";
-import NoteParkView from "./components/NoteParkView";
 import Footer from "./components/Footer";
 import ruetLogo from "./assets/images/ruet_urp_logo_1782301017782.jpg";
 
@@ -54,12 +52,11 @@ export default function App() {
   // Global Search states
   const [globalSearchOpen, setGlobalSearchOpen] = useState(false);
   const [globalSearchQuery, setGlobalSearchQuery] = useState("");
-  const [noteParkItems, setNoteParkItems] = useState<any[]>([]);
 
   // Global Sync States (initially empty to ensure we fetch freshly and exclusively from the live Supabase database, avoiding stale data and reappearances of deleted items)
   const [students, setStudents] = useState<Student[]>([]);
   const [notices, setNotices] = useState<Notice[]>([]);
-  const [galleryItems, setGalleryItems] = useState<GalleryItem[]>([]);
+  const [insiderTopics, setInsiderTopics] = useState<InsiderTopic[]>([]);
   const [adminSettings, setAdminSettings] = useState<AdminSettings>(DEFAULT_ADMIN_SETTINGS);
   const [contactInfo, setContactInfo] = useState<{ title?: string; email: string; phone: string }[]>([
     { title: "General Contact", email: "sadaturp25@gmail.com", phone: "01750-121454" },
@@ -124,34 +121,36 @@ export default function App() {
     }
   };
 
-  const fetchGallery = async () => {
+  const fetchInsiderTopics = async () => {
     const { data, error } = await supabase
       .from("gallery_items")
-      .select("*")
-      .order("date", { ascending: false });
+      .select("*");
     if (!error && data) {
-      setGalleryItems(data.map(item => ({
-        id: item.id,
-        title: item.title,
-        caption: item.caption,
-        imageUrl: item.imageUrl,
-        category: item.category as "Academic" | "Extra-curriculum",
-        date: item.date
-      })));
-    }
-  };
-
-  const fetchNoteParkItems = async () => {
-    try {
-      const { data, error } = await supabase
-        .from("note_park")
-        .select("*")
-        .order("class_date", { ascending: false });
-      if (!error && data) {
-        setNoteParkItems(data);
-      }
-    } catch (e) {
-      console.error("Error fetching note park in App:", e);
+      const parsed = data.map(item => {
+        let content = "";
+        let attachments: any[] = [];
+        try {
+          if (item.date && item.date.startsWith("{") && item.date.endsWith("}")) {
+            const meta = JSON.parse(item.date);
+            content = meta.content || "";
+            attachments = meta.attachments || [];
+          } else {
+            content = item.date || "";
+          }
+        } catch {
+          content = item.date || "";
+        }
+        return {
+          id: item.id,
+          title: item.title,
+          short: item.caption,
+          bg: item.imageUrl,
+          icon: item.category,
+          content,
+          attachments
+        } as InsiderTopic;
+      });
+      setInsiderTopics(parsed);
     }
   };
 
@@ -250,16 +249,19 @@ export default function App() {
         await supabase.from("notices").insert(DEFAULT_NOTICES);
       }
 
-      // 3. Seed gallery items
+      // 3. Seed Insider Topics
       const { data: gals, error: galError } = await supabase.from("gallery_items").select("id");
       if (!galError && (!gals || gals.length === 0)) {
-        const payload = DEFAULT_GALLERY.map(item => ({
+        const payload = DEFAULT_INSIDERS.map(item => ({
           id: item.id,
           title: item.title,
-          caption: item.caption,
-          imageUrl: item.imageUrl,
-          category: item.category,
-          date: item.date
+          caption: item.short || "",
+          imageUrl: item.bg || "",
+          category: item.icon || "Map",
+          date: JSON.stringify({
+            content: item.content || "",
+            attachments: item.attachments || []
+          })
         }));
         await supabase.from("gallery_items").insert(payload);
       }
@@ -301,11 +303,10 @@ export default function App() {
       // Always pull values
       fetchNotices();
       fetchStudents();
-      fetchGallery();
+      fetchInsiderTopics();
       fetchSettings();
       fetchContactInfo();
       fetchOnlinePlatforms();
-      fetchNoteParkItems();
     }
   };
 
@@ -333,7 +334,7 @@ export default function App() {
         "postgres_changes",
         { event: "*", schema: "public", table: "gallery_items" },
         () => {
-          fetchGallery();
+          fetchInsiderTopics();
         }
       )
       .on(
@@ -357,24 +358,16 @@ export default function App() {
           fetchOnlinePlatforms();
         }
       )
-      .on(
-        "postgres_changes",
-        { event: "*", schema: "public", table: "note_park" },
-        () => {
-          fetchNoteParkItems();
-        }
-      )
       .subscribe();
 
     // Background interval fallback polling (every 8 seconds) for perfect sync if network drops or sockets disconnect
     const pollInterval = setInterval(() => {
       fetchNotices();
       fetchStudents();
-      fetchGallery();
+      fetchInsiderTopics();
       fetchSettings();
       fetchContactInfo();
       fetchOnlinePlatforms();
-      fetchNoteParkItems();
     }, 8000);
 
     // Global shortcut to open global search bar
@@ -449,40 +442,22 @@ export default function App() {
       }
     });
 
-    // 3. Search NotePark
-    noteParkItems.forEach((note) => {
-      if (
-        note.subject_name?.toLowerCase().includes(query) ||
-        note.class_teacher?.toLowerCase().includes(query) ||
-        note.class_description?.toLowerCase().includes(query) ||
-        note.class_period?.toLowerCase().includes(query)
-      ) {
-        results.push({
-          type: "NotePark",
-          title: note.subject_name || "Lecture Note",
-          subtitle: `${note.class_teacher || ""} • Period ${note.class_period || ""} • ${(note.class_description || "").slice(0, 75)}...`,
-          meta: `Class Date: ${note.class_date || ""}`,
-          data: note,
-        });
-      }
-    });
-
-    // 4. Search Gallery
-    galleryItems.forEach((g) => {
-      const title = g.title || "";
-      const caption = g.caption || "";
-      const category = g.category || "";
+    // 3. Search Insider Topics
+    insiderTopics.forEach((ins) => {
+      const title = ins.title || "";
+      const short = ins.short || "";
+      const content = ins.content || "";
       if (
         title.toLowerCase().includes(query) ||
-        caption.toLowerCase().includes(query) ||
-        category.toLowerCase().includes(query)
+        short.toLowerCase().includes(query) ||
+        content.toLowerCase().includes(query)
       ) {
         results.push({
-          type: "Gallery",
+          type: "InsiderTopic" as any,
           title: title,
-          subtitle: caption.slice(0, 90) + "...",
-          meta: `Gallery • ${category}`,
-          data: g,
+          subtitle: short.slice(0, 90) + "...",
+          meta: "Insiders Group",
+          data: ins,
         });
       }
     });
@@ -529,16 +504,8 @@ export default function App() {
         localStorage.setItem("notice_search_init", result.data.title);
       } catch {}
       handleViewChange("Notice");
-    } else if (result.type === "NotePark") {
-      try {
-        localStorage.setItem("notepark_search_init", result.data.subject_name);
-      } catch {}
-      handleViewChange("NotePark");
-    } else if (result.type === "Gallery") {
-      try {
-        localStorage.setItem("gallery_search_init", result.data.title);
-      } catch {}
-      handleViewChange("Gallery");
+    } else if (result.type === "InsiderTopic") {
+      handleViewChange("Home");
     } else if (result.type === "AcademicTool") {
       handleViewChange("Academic Tools");
     }
@@ -583,8 +550,31 @@ export default function App() {
 
   // State update helpers writing directly to Supabase DB
   const handleAddNotice = async (newNotice: Notice) => {
-    setNotices(prev => [newNotice, ...prev]);
-    const { error } = await supabase.from("notices").insert(newNotice);
+    if (newNotice.is_latest) {
+      setNotices(prev => [newNotice, ...prev].map(n => n.id === newNotice.id ? n : { ...n, is_latest: false }));
+      try {
+        await supabase
+          .from("notices")
+          .update({ is_latest: false })
+          .neq("id", newNotice.id);
+      } catch (e) {
+        console.warn("Could not reset other notices is_latest status in Supabase:", e);
+      }
+    } else {
+      setNotices(prev => [newNotice, ...prev]);
+    }
+
+    const { error } = await supabase.from("notices").insert({
+      id: newNotice.id,
+      title: newNotice.title,
+      content: newNotice.content,
+      date: newNotice.date,
+      author: newNotice.author,
+      attachments: newNotice.attachments,
+      publish_date: newNotice.publish_date || null,
+      publish_time: newNotice.publish_time || null,
+      is_latest: newNotice.is_latest || false
+    });
     if (error) {
       console.error("Supabase insert notice error:", error.message);
     }
@@ -595,6 +585,39 @@ export default function App() {
     const { error } = await supabase.from("notices").delete().eq("id", id);
     if (error) {
       console.error("Supabase delete notice error:", error.message);
+    }
+  };
+
+  const handleUpdateNotice = async (notice: Notice) => {
+    if (notice.is_latest) {
+      setNotices(prev => prev.map(n => n.id === notice.id ? notice : { ...n, is_latest: false }));
+      try {
+        await supabase
+          .from("notices")
+          .update({ is_latest: false })
+          .neq("id", notice.id);
+      } catch (e) {
+        console.warn("Could not reset other notices is_latest status in Supabase:", e);
+      }
+    } else {
+      setNotices(prev => prev.map(n => n.id === notice.id ? notice : n));
+    }
+
+    const { error } = await supabase
+      .from("notices")
+      .update({
+        title: notice.title,
+        content: notice.content,
+        date: notice.date,
+        author: notice.author,
+        attachments: notice.attachments,
+        publish_date: notice.publish_date || null,
+        publish_time: notice.publish_time || null,
+        is_latest: notice.is_latest || false
+      })
+      .eq("id", notice.id);
+    if (error) {
+      console.error("Supabase update notice error:", error.message);
     }
   };
 
@@ -625,43 +648,49 @@ export default function App() {
     }
   };
 
-  const handleAddGalleryItem = async (newItem: GalleryItem) => {
-    setGalleryItems(prev => [newItem, ...prev]);
+  const handleAddInsiderTopic = async (topic: InsiderTopic) => {
+    setInsiderTopics(prev => [topic, ...prev]);
     const { error } = await supabase.from("gallery_items").insert({
-      id: newItem.id,
-      title: newItem.title,
-      caption: newItem.caption,
-      imageUrl: newItem.imageUrl,
-      category: newItem.category,
-      date: newItem.date
+      id: topic.id,
+      title: topic.title,
+      caption: topic.short,
+      imageUrl: topic.bg || "",
+      category: topic.icon || "Map",
+      date: JSON.stringify({
+        content: topic.content,
+        attachments: topic.attachments || []
+      })
     });
     if (error) {
-      console.error("Supabase insert gallery error:", error.message);
+      console.error("Supabase insert insider topic error:", error.message);
     }
   };
 
-  const handleEditGalleryItem = async (updatedItem: GalleryItem) => {
-    setGalleryItems(prev => prev.map(item => item.id === updatedItem.id ? updatedItem : item));
+  const handleUpdateInsiderTopic = async (topic: InsiderTopic) => {
+    setInsiderTopics(prev => prev.map(t => t.id === topic.id ? topic : t));
     const { error } = await supabase
       .from("gallery_items")
       .update({
-        title: updatedItem.title,
-        caption: updatedItem.caption,
-        imageUrl: updatedItem.imageUrl,
-        category: updatedItem.category,
-        date: updatedItem.date
+        title: topic.title,
+        caption: topic.short,
+        imageUrl: topic.bg || "",
+        category: topic.icon || "Map",
+        date: JSON.stringify({
+          content: topic.content,
+          attachments: topic.attachments || []
+        })
       })
-      .eq("id", updatedItem.id);
+      .eq("id", topic.id);
     if (error) {
-      console.error("Supabase update gallery error:", error.message);
+      console.error("Supabase update insider topic error:", error.message);
     }
   };
 
-  const handleDeleteGalleryItem = async (id: string) => {
-    setGalleryItems(prev => prev.filter(item => item.id !== id));
+  const handleDeleteInsiderTopic = async (id: string) => {
+    setInsiderTopics(prev => prev.filter(t => t.id !== id));
     const { error } = await supabase.from("gallery_items").delete().eq("id", id);
     if (error) {
-      console.error("Supabase delete gallery error:", error.message);
+      console.error("Supabase delete insider topic error:", error.message);
     }
   };
 
@@ -925,6 +954,7 @@ export default function App() {
               <HomeView 
                 notices={notices} 
                 students={students} 
+                insiders={insiderTopics}
                 onNavigate={handleViewChange} 
               />
             )}
@@ -951,21 +981,6 @@ export default function App() {
               <AcademicToolsView />
             )}
 
-            {activeView === "Gallery" && (
-              <GalleryView 
-                galleryItems={galleryItems} 
-                isAdmin={isAuthenticated}
-                onDeleteGalleryItem={handleDeleteGalleryItem}
-                onEditGalleryItem={handleEditGalleryItem}
-              />
-            )}
-
-            {activeView === "NotePark" && (
-              <NoteParkView 
-                isAdmin={isAuthenticated} 
-              />
-            )}
-
             {activeView === "Admin Panel" && (
               <AdminPanelView
                 isAuthenticated={isAuthenticated}
@@ -974,13 +989,15 @@ export default function App() {
                 notices={notices}
                 onAddNotice={handleAddNotice}
                 onDeleteNotice={handleDeleteNotice}
+                onUpdateNotice={handleUpdateNotice}
                 students={students}
                 onAddStudent={handleAddStudent}
                 onDeleteStudent={handleDeleteStudent}
                 onUpdateStudent={handleUpdateStudent}
-                galleryItems={galleryItems}
-                onAddGalleryItem={handleAddGalleryItem}
-                onDeleteGalleryItem={handleDeleteGalleryItem}
+                insiders={insiderTopics}
+                onAddInsiderTopic={handleAddInsiderTopic}
+                onDeleteInsiderTopic={handleDeleteInsiderTopic}
+                onUpdateInsiderTopic={handleUpdateInsiderTopic}
                 adminSettings={adminSettings}
                 onUpdateSettings={handleUpdateSettings}
                 contactInfo={contactInfo}

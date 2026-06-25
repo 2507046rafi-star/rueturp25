@@ -5,7 +5,7 @@ import {
   ShieldCheck, 
   Bell, 
   Users, 
-  Camera, 
+  Layers, 
   Phone, 
   Info, 
   Network, 
@@ -19,9 +19,10 @@ import {
   Save,
   Star,
   ShoppingCart,
-  RefreshCw
+  RefreshCw,
+  FileText
 } from "lucide-react";
-import { Student, Notice, GalleryItem, AdminSettings, getCacheBustedUrl } from "../types";
+import { Student, Notice, InsiderTopic, AdminSettings, getCacheBustedUrl } from "../types";
 import { supabase } from "../lib/supabaseClient";
 
 interface AdminPanelViewProps {
@@ -33,6 +34,7 @@ interface AdminPanelViewProps {
   notices: Notice[];
   onAddNotice: (notice: Notice) => void;
   onDeleteNotice: (id: string) => void;
+  onUpdateNotice: (notice: Notice) => void;
   
   // Student controls
   students: Student[];
@@ -40,10 +42,11 @@ interface AdminPanelViewProps {
   onDeleteStudent: (roll: string) => void;
   onUpdateStudent: (student: Student) => void;
 
-  // Gallery controls
-  galleryItems: GalleryItem[];
-  onAddGalleryItem: (item: GalleryItem) => void;
-  onDeleteGalleryItem: (id: string) => void;
+  // Insiders controls
+  insiders: InsiderTopic[];
+  onAddInsiderTopic: (topic: InsiderTopic) => void;
+  onDeleteInsiderTopic: (id: string) => void;
+  onUpdateInsiderTopic: (topic: InsiderTopic) => void;
 
   // Global settings
   adminSettings: AdminSettings;
@@ -64,13 +67,15 @@ export default function AdminPanelView({
   notices,
   onAddNotice,
   onDeleteNotice,
+  onUpdateNotice,
   students,
   onAddStudent,
   onDeleteStudent,
   onUpdateStudent,
-  galleryItems,
-  onAddGalleryItem,
-  onDeleteGalleryItem,
+  insiders,
+  onAddInsiderTopic,
+  onDeleteInsiderTopic,
+  onUpdateInsiderTopic,
   adminSettings,
   onUpdateSettings,
   contactInfo,
@@ -100,6 +105,10 @@ export default function AdminPanelView({
   const [noticeAuthor, setNoticeAuthor] = useState("Sadat Rahman (CR)");
   const [noticeAttachments, setNoticeAttachments] = useState<{ name: string; url: string; type: string }[]>([]);
   const [noticeTags, setNoticeTags] = useState("");
+  const [noticePublishDate, setNoticePublishDate] = useState("");
+  const [noticePublishTime, setNoticePublishTime] = useState("");
+  const [noticeIsLatest, setNoticeIsLatest] = useState(false);
+  const [editingNoticeId, setEditingNoticeId] = useState<string | null>(null);
 
   // 2. Student
   const [studRoll, setStudRoll] = useState("");
@@ -112,11 +121,14 @@ export default function AdminPanelView({
   const [studTags, setStudTags] = useState("");
   const [editingStudentRoll, setEditingStudentRoll] = useState<string | null>(null);
 
-  // 3. Gallery
-  const [galTitle, setGalTitle] = useState("");
-  const [galCaption, setGalCaption] = useState("");
-  const [galCategory, setGalCategory] = useState<"Academic" | "Extra-curriculum">("Academic");
-  const [galImageUrl, setGalImageUrl] = useState("");
+  // 3. Insiders
+  const [insiderTitle, setInsiderTitle] = useState("");
+  const [insiderShort, setInsiderShort] = useState("");
+  const [insiderContent, setInsiderContent] = useState("");
+  const [insiderIcon, setInsiderIcon] = useState("Map");
+  const [insiderBg, setInsiderBg] = useState("from-rose-500/10 to-orange-500/10 border-rose-500/20");
+  const [insiderAttachments, setInsiderAttachments] = useState<{ name: string; url: string; type: string }[]>([]);
+  const [editingInsiderId, setEditingInsiderId] = useState<string | null>(null);
 
   // 4. Contact
   const [localContacts, setLocalContacts] = useState<{ title?: string; email: string; phone: string }[]>(() => {
@@ -177,27 +189,104 @@ export default function AdminPanelView({
     
     const finalAttachments = [...noticeAttachments];
     if (noticeTags.trim()) {
-      finalAttachments.push({
-        name: noticeTags.trim(),
-        url: "",
-        type: "tags"
-      });
+      const alreadyHasTags = finalAttachments.some(att => att.type === "tags");
+      if (!alreadyHasTags) {
+        finalAttachments.push({
+          name: noticeTags.trim(),
+          url: "",
+          type: "tags"
+        });
+      }
     }
 
-    onAddNotice({
-      id: `notice-${Date.now()}`,
+    const noticeData: Notice = {
+      id: editingNoticeId || `notice-${Date.now()}`,
       title: noticeTitle,
       content: noticeContent,
       date: new Date().toISOString().split("T")[0],
       author: noticeAuthor,
-      attachments: finalAttachments
-    });
+      attachments: finalAttachments,
+      publish_date: noticePublishDate || undefined,
+      publish_time: noticePublishTime || undefined,
+      is_latest: noticeIsLatest
+    };
+
+    if (editingNoticeId) {
+      onUpdateNotice(noticeData);
+      setEditingNoticeId(null);
+      triggerToast("Notice updated successfully!");
+    } else {
+      onAddNotice(noticeData);
+      triggerToast("Notice published successfully!");
+    }
 
     setNoticeTitle("");
     setNoticeContent("");
     setNoticeAttachments([]);
     setNoticeTags("");
-    triggerToast("Notice published successfully!");
+    setNoticePublishDate("");
+    setNoticePublishTime("");
+    setNoticeIsLatest(false);
+  };
+
+  const handleEditNoticeSelect = (notice: Notice) => {
+    setEditingNoticeId(notice.id);
+    setNoticeTitle(notice.title);
+    setNoticeContent(notice.content);
+    setNoticeAuthor(notice.author);
+    setNoticePublishDate(notice.publish_date || "");
+    setNoticePublishTime(notice.publish_time || "");
+    setNoticeIsLatest(!!notice.is_latest);
+
+    const tagsAttachment = notice.attachments?.find(att => att.type === "tags");
+    if (tagsAttachment) {
+      setNoticeTags(tagsAttachment.name);
+      setNoticeAttachments((notice.attachments || []).filter(att => att.type !== "tags"));
+    } else {
+      setNoticeTags("");
+      setNoticeAttachments(notice.attachments || []);
+    }
+  };
+
+  const handleInsiderSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!insiderTitle.trim() || !insiderShort.trim() || !insiderContent.trim()) return;
+
+    const topicData: InsiderTopic = {
+      id: editingInsiderId || `insider-${Date.now()}`,
+      title: insiderTitle,
+      short: insiderShort,
+      content: insiderContent,
+      icon: insiderIcon,
+      bg: insiderBg,
+      attachments: insiderAttachments
+    };
+
+    if (editingInsiderId) {
+      onUpdateInsiderTopic(topicData);
+      setEditingInsiderId(null);
+      triggerToast("Insider topic updated successfully!");
+    } else {
+      onAddInsiderTopic(topicData);
+      triggerToast("Insider topic added successfully!");
+    }
+
+    setInsiderTitle("");
+    setInsiderShort("");
+    setInsiderContent("");
+    setInsiderIcon("Map");
+    setInsiderBg("from-rose-500/10 to-orange-500/10 border-rose-500/20");
+    setInsiderAttachments([]);
+  };
+
+  const handleEditInsiderSelect = (topic: InsiderTopic) => {
+    setEditingInsiderId(topic.id);
+    setInsiderTitle(topic.title);
+    setInsiderShort(topic.short);
+    setInsiderContent(topic.content);
+    setInsiderIcon(topic.icon);
+    setInsiderBg(topic.bg);
+    setInsiderAttachments(topic.attachments || []);
   };
 
   const handleStudentSubmit = (e: React.FormEvent) => {
@@ -255,30 +344,7 @@ export default function AdminPanelView({
     setStudTags(student.tags.join(", "));
   };
 
-  const handleGallerySubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!galTitle.trim() || !galCaption.trim()) return;
 
-    const words = wordCount(galCaption);
-    if (words > 150) {
-      triggerToast(`Caption length is ${words} words. The maximum allowed limit is 150 words.`, "error");
-      return;
-    }
-
-    onAddGalleryItem({
-      id: `gallery-${Date.now()}`,
-      title: galTitle,
-      caption: galCaption,
-      category: galCategory,
-      imageUrl: galImageUrl || "https://images.unsplash.com/photo-1504307651254-35680f356dfd?auto=format&fit=crop&w=600&q=80",
-      date: new Date().toISOString().split("T")[0]
-    });
-
-    setGalTitle("");
-    setGalCaption("");
-    setGalImageUrl("");
-    triggerToast("Post added to Gallery!");
-  };
 
   const handleAddLocalContact = () => {
     if (!newContactEmail && !newContactPhone) {
@@ -393,10 +459,10 @@ export default function AdminPanelView({
 
   // Dashboard sidebar categories
   const enquirys = [
-    { id: "notice", label: "Notice Enquiry", icon: Bell },
-    { id: "students", label: "Students Enquiry", icon: Users },
-    { id: "gallery", label: "Gallery Enquiry", icon: Camera },
-    { id: "contact", label: "Contact Enquiry", icon: Phone },
+    { id: "notice", label: "Notice Board", icon: Bell },
+    { id: "students", label: "Students Roster", icon: Users },
+    { id: "gallery", label: "Insiders Topics", icon: Layers },
+    { id: "contact", label: "Contact channels", icon: Phone },
     { id: "ruet", label: "RUET URP'25 Enquiry", icon: Info },
     { id: "platforms", label: "Online Platforms Enquiry", icon: Network },
     { id: "policy", label: "Website Policy Enquiry", icon: ShieldAlert }
@@ -567,12 +633,67 @@ export default function AdminPanelView({
                   </div>
                 </div>
 
-                <button
-                  type="submit"
-                  className="px-4 py-2 bg-rose-500 hover:bg-rose-600 text-white text-xs font-semibold uppercase rounded-lg transition cursor-pointer flex items-center gap-1"
-                >
-                  <Plus className="w-3.5 h-3.5" /> Publish Notice
-                </button>
+                {/* Publish Date & Time and Is Latest */}
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 p-4 rounded-xl bg-gray-50 dark:bg-gray-800/50 border border-gray-150 dark:border-gray-750 text-xs">
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-mono uppercase text-gray-400 block font-bold">Publish Date Override (Optional)</label>
+                    <input
+                      type="date"
+                      value={noticePublishDate}
+                      onChange={(e) => setNoticePublishDate(e.target.value)}
+                      className="w-full px-3 py-2 text-xs rounded-lg bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-800 dark:text-gray-100 focus:outline-none focus:ring-1 focus:ring-rose-500"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-mono uppercase text-gray-400 block font-bold">Publish Time Override (Optional)</label>
+                    <input
+                      type="text"
+                      placeholder="e.g., 10:30 AM"
+                      value={noticePublishTime}
+                      onChange={(e) => setNoticePublishTime(e.target.value)}
+                      className="w-full px-3 py-2 text-xs rounded-lg bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-800 dark:text-gray-100 focus:outline-none focus:ring-1 focus:ring-rose-500"
+                    />
+                  </div>
+                  <div className="flex items-center gap-2 sm:pt-5">
+                    <input
+                      type="checkbox"
+                      id="noticeIsLatest"
+                      checked={noticeIsLatest}
+                      onChange={(e) => setNoticeIsLatest(e.target.checked)}
+                      className="w-4 h-4 rounded text-rose-500 focus:ring-rose-500 border-gray-300 cursor-pointer"
+                    />
+                    <label htmlFor="noticeIsLatest" className="text-xs font-semibold text-gray-750 dark:text-gray-200 cursor-pointer select-none">
+                      Mark as Latest Notice 🔥
+                    </label>
+                  </div>
+                </div>
+
+                <div className="flex gap-2">
+                  <button
+                    type="submit"
+                    className="px-4 py-2 bg-rose-500 hover:bg-rose-600 text-white text-xs font-semibold uppercase rounded-lg transition cursor-pointer flex items-center gap-1 shadow-sm"
+                  >
+                    <Save className="w-3.5 h-3.5" /> {editingNoticeId ? "Update Notice" : "Publish Notice"}
+                  </button>
+                  {editingNoticeId && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setEditingNoticeId(null);
+                        setNoticeTitle("");
+                        setNoticeContent("");
+                        setNoticeAttachments([]);
+                        setNoticeTags("");
+                        setNoticePublishDate("");
+                        setNoticePublishTime("");
+                        setNoticeIsLatest(false);
+                      }}
+                      className="px-4 py-2 bg-gray-100 hover:bg-gray-200 dark:bg-gray-800 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-300 text-xs font-semibold uppercase rounded-lg transition cursor-pointer"
+                    >
+                      Cancel Edit
+                    </button>
+                  )}
+                </div>
               </form>
 
               {/* Notices list and delete option */}
@@ -591,16 +712,25 @@ export default function AdminPanelView({
                           {n.title}
                         </span>
                         <span className="text-[10px] font-mono text-gray-400">
-                          {n.date} • By: {n.author}
+                          {n.publish_date ? `${n.publish_date}${n.publish_time ? ` at ${n.publish_time}` : ""}` : n.date} • By: {n.author} {n.is_latest && "🔥 [LATEST]"}
                         </span>
                       </div>
-                      <button
-                        onClick={() => onDeleteNotice(n.id)}
-                        className="p-1.5 rounded-md hover:bg-red-500 hover:text-white text-red-500 transition cursor-pointer shrink-0"
-                        title="Delete notice"
-                      >
-                        <Trash2 className="w-3.5 h-3.5" />
-                      </button>
+                      <div className="flex gap-1 shrink-0">
+                        <button
+                          onClick={() => handleEditNoticeSelect(n)}
+                          className="p-1.5 rounded hover:bg-gray-200 dark:hover:bg-gray-750 text-gray-600 dark:text-gray-300 transition cursor-pointer"
+                          title="Edit Notice Details"
+                        >
+                          <Edit3 className="w-3.5 h-3.5" />
+                        </button>
+                        <button
+                          onClick={() => onDeleteNotice(n.id)}
+                          className="p-1.5 rounded hover:bg-red-500 hover:text-white text-red-500 transition cursor-pointer"
+                          title="Delete notice"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
                     </div>
                   ))}
                 </div>
@@ -814,77 +944,204 @@ export default function AdminPanelView({
             </div>
           )}
 
-          {/* GALLERY ENQUIRY */}
+          {/* GALLERY ENQUIRY - repurposed for INSIDERS TOPICS */}
           {activeEnquiry === "gallery" && (
             <div className="space-y-6">
-              <div className="border-b border-gray-150 dark:border-gray-800 pb-3">
-                <h3 className="font-display font-extrabold text-lg text-gray-900 dark:text-white uppercase">
-                  Gallery Enquiry
-                </h3>
-                <p className="text-xs text-gray-400">Post new laboratory photographs. Caption must strictly remain within 150 words.</p>
+              <div className="border-b border-gray-150 dark:border-gray-800 pb-3 flex justify-between items-center">
+                <div>
+                  <h3 className="font-display font-extrabold text-lg text-gray-900 dark:text-white uppercase">
+                    Insiders Topics
+                  </h3>
+                  <p className="text-xs text-gray-400">Add, edit or delete custom categories/topics inside the "URP'25 Insiders" bento grid. Files, text, or image attachments are supported!</p>
+                </div>
+                {editingInsiderId && (
+                  <button 
+                    onClick={() => {
+                      setEditingInsiderId(null);
+                      setInsiderTitle("");
+                      setInsiderShort("");
+                      setInsiderContent("");
+                      setInsiderIcon("Map");
+                      setInsiderBg("from-rose-500/10 to-orange-500/10 border-rose-500/20");
+                      setInsiderAttachments([]);
+                    }}
+                    className="px-2.5 py-1 bg-gray-100 hover:bg-gray-200 text-[10px] rounded font-semibold text-gray-500 uppercase font-mono cursor-pointer"
+                  >
+                    Cancel Editing
+                  </button>
+                )}
               </div>
 
-              <form onSubmit={handleGallerySubmit} className="space-y-4 text-xs">
+              <form onSubmit={handleInsiderSubmit} className="space-y-4 text-xs">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="space-y-1">
-                    <label className="text-[10px] font-mono uppercase text-gray-400">Photo Title</label>
+                    <label className="text-[10px] font-mono uppercase text-gray-400 font-bold">Topic Title *</label>
                     <input
                       type="text"
                       required
-                      placeholder="e.g., GIS Buffer Zoning Excursion"
-                      value={galTitle}
-                      onChange={(e) => setGalTitle(e.target.value)}
+                      placeholder="e.g., GIS Club URP'25"
+                      value={insiderTitle}
+                      onChange={(e) => setInsiderTitle(e.target.value)}
                       className="w-full px-3 py-2 rounded-lg bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-800 dark:text-gray-100 focus:outline-none focus:ring-1 focus:ring-rose-500"
                     />
                   </div>
                   <div className="space-y-1">
-                    <label className="text-[10px] font-mono uppercase text-gray-400">Category Selection</label>
+                    <label className="text-[10px] font-mono uppercase text-gray-400 font-bold">Short Subtitle / Description *</label>
+                    <input
+                      type="text"
+                      required
+                      placeholder="e.g., Mapping & spatial database resources"
+                      value={insiderShort}
+                      onChange={(e) => setInsiderShort(e.target.value)}
+                      className="w-full px-3 py-2 rounded-lg bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-800 dark:text-gray-100 focus:outline-none focus:ring-1 focus:ring-rose-500"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-mono uppercase text-gray-400 font-bold">Lucide Icon Name</label>
                     <select
-                      value={galCategory}
-                      onChange={(e) => setGalCategory(e.target.value as any)}
+                      value={insiderIcon}
+                      onChange={(e) => setInsiderIcon(e.target.value)}
                       className="w-full px-3 py-2 rounded-lg bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-800 dark:text-gray-100 focus:outline-none focus:ring-1 focus:ring-rose-500 text-xs"
                     >
-                      <option value="Academic">Academic</option>
-                      <option value="Extra-curriculum">Extra-curriculum</option>
+                      <option value="Map">Map Icon</option>
+                      <option value="Layers">Layers Icon</option>
+                      <option value="FileText">FileText Icon</option>
+                      <option value="Users">Users Icon</option>
+                      <option value="Bell">Bell Icon</option>
+                      <option value="Star">Star Icon</option>
+                    </select>
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-mono uppercase text-gray-400 font-bold">Card Color Theme (Aura styling)</label>
+                    <select
+                      value={insiderBg}
+                      onChange={(e) => setInsiderBg(e.target.value)}
+                      className="w-full px-3 py-2 rounded-lg bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-800 dark:text-gray-100 focus:outline-none focus:ring-1 focus:ring-rose-500 text-xs"
+                    >
+                      <option value="from-rose-500/10 to-orange-500/10 border-rose-500/20">Rose To Orange luxury glow</option>
+                      <option value="from-cyan-500/10 to-blue-500/10 border-cyan-500/20">Cyan To Blue digital glow</option>
+                      <option value="from-amber-500/10 to-yellow-500/10 border-amber-500/20">Amber To Yellow sunny glow</option>
+                      <option value="from-violet-500/10 to-fuchsia-500/10 border-violet-500/20">Violet To Fuchsia majestic aura</option>
+                      <option value="from-emerald-500/10 to-teal-500/10 border-emerald-500/20">Emerald To Teal clean aura</option>
                     </select>
                   </div>
                 </div>
 
                 <div className="space-y-1">
-                  <label className="text-[10px] font-mono uppercase text-gray-400">Image Source Link URL</label>
-                  <input
-                    type="url"
-                    placeholder="https://images.unsplash.com/..."
-                    value={galImageUrl}
-                    onChange={(e) => setGalImageUrl(e.target.value)}
-                    className="w-full px-3 py-2 rounded-lg bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-800 dark:text-gray-100 focus:outline-none focus:ring-1 focus:ring-rose-500 font-mono"
-                  />
-                </div>
-
-                <div className="space-y-1">
-                  <div className="flex justify-between text-[10px] font-mono uppercase text-gray-400">
-                    <label>Description Caption *</label>
-                    <span className={wordCount(galCaption) > 150 ? "text-red-500" : "text-gray-400"}>
-                      {wordCount(galCaption)} / 150 words
-                    </span>
-                  </div>
+                  <label className="text-[10px] font-mono uppercase text-gray-400 font-bold">Full Content Text (Markdown supported)</label>
                   <textarea
                     rows={4}
                     required
-                    placeholder="Provide Facebook style description caption (Max 150 words)..."
-                    value={galCaption}
-                    onChange={(e) => setGalCaption(e.target.value)}
+                    placeholder="Enter full information, guidelines, links, etc. for this insider topic..."
+                    value={insiderContent}
+                    onChange={(e) => setInsiderContent(e.target.value)}
                     className="w-full px-3 py-2 rounded-lg bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-800 dark:text-gray-100 focus:outline-none focus:ring-1 focus:ring-rose-500"
                   />
                 </div>
 
+                {/* Attachments for Insiders */}
+                <div className="space-y-2">
+                  <label className="text-[10px] font-mono uppercase text-gray-400 block font-bold">Topic Attachments / Resources (Images, PDFs, Links)</label>
+                  <div className="flex flex-col gap-2">
+                    <label className="w-full sm:w-auto self-start px-4 py-2 bg-stone-100 dark:bg-stone-800 hover:bg-stone-200 dark:hover:bg-stone-700 rounded-lg text-[11px] font-semibold text-stone-700 dark:text-stone-300 transition uppercase cursor-pointer flex items-center justify-center gap-1.5 border border-stone-250 dark:border-stone-750">
+                      <Plus className="w-3.5 h-3.5 text-rose-500" /> Upload Files / Photos
+                      <input
+                        type="file"
+                        multiple
+                        className="hidden"
+                        onChange={(e) => {
+                          const files = Array.from(e.target.files || []) as File[];
+                          files.forEach((file: File) => {
+                            const reader = new FileReader();
+                            reader.onloadend = () => {
+                              if (typeof reader.result === "string") {
+                                setInsiderAttachments(prev => [
+                                  ...prev,
+                                  {
+                                    name: file.name,
+                                    url: reader.result as string, // base64 data URL
+                                    type: file.type || "application/octet-stream"
+                                  }
+                                ]);
+                              }
+                            };
+                            reader.readAsDataURL(file);
+                          });
+                        }}
+                      />
+                    </label>
+
+                    {/* Insider Attachments Preview */}
+                    {insiderAttachments.length > 0 && (
+                      <div className="flex flex-wrap gap-2 pt-1">
+                        {insiderAttachments.map((att, idx) => (
+                          <div key={idx} className="flex items-center gap-1.5 px-2 py-1 bg-stone-50 dark:bg-stone-900 border border-stone-200 dark:border-stone-800 rounded text-[11px]">
+                            <span className="font-mono text-stone-600 dark:text-stone-400 line-clamp-1 max-w-[150px]">{att.name}</span>
+                            <button
+                              type="button"
+                              onClick={() => setInsiderAttachments(prev => prev.filter((_, i) => i !== idx))}
+                              className="text-red-500 hover:text-red-700 cursor-pointer font-bold shrink-0 ml-1"
+                              title="Remove attachment"
+                            >
+                              ✕
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </div>
+
                 <button
                   type="submit"
-                  className="px-4 py-2 bg-rose-500 hover:bg-rose-600 text-white font-semibold uppercase rounded-lg transition cursor-pointer flex items-center gap-1.5"
+                  className="px-4 py-2 bg-rose-500 hover:bg-rose-600 text-white font-semibold uppercase rounded-lg transition cursor-pointer flex items-center gap-1.5 shadow-sm"
                 >
-                  <Plus className="w-3.5 h-3.5" /> Post to Gallery
+                  <Save className="w-3.5 h-3.5" /> {editingInsiderId ? "Update Topic" : "Add Topic"}
                 </button>
               </form>
+
+              {/* Existing Insiders topics list */}
+              <div className="space-y-2 pt-4 border-t border-gray-150 dark:border-gray-800">
+                <span className="text-[10px] font-mono font-bold uppercase text-gray-400 block mb-2">
+                  Existing Insider Topics ({insiders.length})
+                </span>
+                <div className="max-h-64 overflow-y-auto space-y-2 pr-1">
+                  {insiders.map((topic) => (
+                    <div
+                      key={topic.id}
+                      className="p-3 rounded-lg bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-750 flex justify-between items-center gap-4 text-xs"
+                    >
+                      <div className="truncate">
+                        <span className="font-bold text-gray-800 dark:text-white uppercase truncate block">
+                          {topic.title}
+                        </span>
+                        <span className="text-[10px] font-mono text-gray-400 block">
+                          {topic.short} ({topic.attachments?.length || 0} Attachments)
+                        </span>
+                      </div>
+                      <div className="flex gap-1 shrink-0">
+                        <button
+                          onClick={() => handleEditInsiderSelect(topic)}
+                          className="p-1.5 rounded hover:bg-gray-200 dark:hover:bg-gray-750 text-gray-600 dark:text-gray-300 transition cursor-pointer"
+                          title="Edit Topic"
+                        >
+                          <Edit3 className="w-3.5 h-3.5" />
+                        </button>
+                        <button
+                          onClick={() => onDeleteInsiderTopic(topic.id)}
+                          className="p-1.5 rounded hover:bg-red-500 hover:text-white text-red-500 transition cursor-pointer"
+                          title="Delete Topic"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
             </div>
           )}
 

@@ -1,4 +1,4 @@
-import { Student, Notice, GalleryItem, AdminSettings } from "../types";
+import { Student, Notice, AdminSettings, InsiderTopic } from "../types";
 
 export const DEFAULT_STUDENTS: Student[] = [
   {
@@ -87,41 +87,6 @@ export const DEFAULT_NOTICES: Notice[] = [
   }
 ];
 
-export const DEFAULT_GALLERY: GalleryItem[] = [
-  {
-    id: "gal-1",
-    title: "Field Survey at Rajshahi Town Protection Embankment",
-    caption: "The batch URP'25 conducts an in-depth riverbank morphologic and land-use survey along the Padma River boundary. Students used real-time GPS coordinates and hand-drafted base map charts to visualize local urbanization effects.",
-    imageUrl: "https://images.unsplash.com/photo-1504307651254-35680f356dfd?auto=format&fit=crop&w=600&q=80",
-    category: "Academic",
-    date: "2026-05-15"
-  },
-  {
-    id: "gal-2",
-    title: "Intra-Department Football League Champions",
-    caption: "URP Batch 2025 clinches the championship trophy at the RUET Inter-batch sports festival. A brilliant team performance and a cheering gallery of batchmates made it an unforgettable afternoon.",
-    imageUrl: "https://images.unsplash.com/photo-1508098682722-e99c43a406b2?auto=format&fit=crop&w=600&q=80",
-    category: "Extra-curriculum",
-    date: "2026-06-05"
-  },
-  {
-    id: "gal-3",
-    title: "Architectural Drafting and Studio Modeling Session",
-    caption: "Students hard at work during our foundational planning studio course. Developing physical models of eco-friendly community spaces and sketching detailed isometric house views under supervision.",
-    imageUrl: "https://images.unsplash.com/photo-1503387762-592deb58ef4e?auto=format&fit=crop&w=600&q=80",
-    category: "Academic",
-    date: "2026-04-10"
-  },
-  {
-    id: "gal-4",
-    title: "Vibrant Batch Day Festival at RUET Cafeteria",
-    caption: "Celebrating togetherness, URP'25 batch day with beautiful acoustic performances, stand-up comedy, and local sweets. Strengthening the life-long bonds of the batch family.",
-    imageUrl: "https://images.unsplash.com/photo-1511795409834-ef04bbd61622?auto=format&fit=crop&w=600&q=80",
-    category: "Extra-curriculum",
-    date: "2026-05-01"
-  }
-];
-
 export const DEFAULT_ADMIN_SETTINGS: AdminSettings = {
   aboutUs: `Rajshahi University of Engineering and Technology (RUET) is one of the premier public engineering universities in Bangladesh. The department of Urban and Regional Planning (URP) is an exceptional department dedicated to cultivating future planners, smart developers, and policy professionals. 
 
@@ -136,3 +101,50 @@ Batch 2025 of RUET URP represents a cohort of ambitious, brilliant students equi
 
 For inquiries or updates, please reach out to the Web Coordinator, Sadat Rahman Khan.`
 };
+
+export const DEFAULT_INSIDERS: InsiderTopic[] = [
+  {
+    id: "insider-1",
+    title: "GIS Club",
+    short: "Spatial Buffering & Advanced Geoprocessing",
+    content: `The GIS Club analyzes geographic patterns to draft strategic regional masterplans. We utilize ArcMap, QGIS, and Google Earth Engine to build layers, analyze spatial buffering, and design smart-city models.
+
+Projection System: BUTM (Bangladesh Universal Transverse Mercator)
+Standard Datum: BGD2006 / WGS 84
+Main Operations: Vector Clipping, Density Heatmaps, NDVI Analytics
+
+Current Research: Multi-Criteria Decision Analysis (MCDA) for landfill allocation in the Rajshahi Metropolitan area.`,
+    icon: "Map",
+    bg: "from-blue-600/20 to-indigo-600/20 border-blue-500/30",
+    attachments: []
+  },
+  {
+    id: "insider-2",
+    title: "URP Core",
+    short: "Urban Planning & Zoning Policies",
+    content: `Focuses on structural zoning regulations, building code compliance, and Master Plan structures. Understanding land use controls and zoning bylaws that regulate Bangladesh's urban growth.
+
+FAR Calculation: Floor Area Ratio constraints for modern high-rise residences.
+Setback Rules: Min distance from street line for visual harmony.
+
+*Based on Bangladesh National Building Code (BNBC) & Rajshahi Master Plan Guidelines.`,
+    icon: "Layers",
+    bg: "from-rose-600/20 to-red-600/20 border-rose-500/30",
+    attachments: []
+  },
+  {
+    id: "insider-3",
+    title: "Architecture Studio",
+    short: "Creative Drafting & 3D Modeling",
+    content: `Where urban scale meets fine aesthetics. We draft isometric blueprints, study spatial forms, and render models using SketchUp, AutoCAD, and Revit.
+
+STUDIO PROJECT #01: SUSTAINABLE COMMUNITY RECREATION PARK
+Status: 80% Render Complete
+Due: Thursday
+
+"A town is not just a collection of buildings, but a living body shaped by community patterns."`,
+    icon: "Compass",
+    bg: "from-amber-600/20 to-orange-600/20 border-orange-500/30",
+    attachments: []
+  }
+];
