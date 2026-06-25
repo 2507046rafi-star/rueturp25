@@ -34,17 +34,18 @@ export default function HomeView({ notices, students, insiders = [], onNavigate 
   // Background images slideshow for Hero section
   const [bgIndex, setBgIndex] = useState(0);
   const backgroundImages = [
-    "https://images.unsplash.com/photo-1541339907198-e08756dedf3f?auto=format&fit=crop&w=1600&q=80", // (1) Rajshahi University of Engineering and Technology look (red brick campus)
-    "https://images.unsplash.com/photo-1451187580459-43490279c0fa?auto=format&fit=crop&w=1600&q=80", // (2) Night images of earth from satellite
-    "https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?auto=format&fit=crop&w=1600&q=80", // (3) GIS mapping of Bangladesh of natural beauty
-    "https://images.unsplash.com/photo-1569336415962-a4bd9f69cd83?auto=format&fit=crop&w=1600&q=80", // (4) Urban & Regional Planning related images
-    "https://images.unsplash.com/photo-1524661135-423995f22d0b?auto=format&fit=crop&w=1600&q=80"  // (5) GIS related images of Bangladesh
+    "https://images.unsplash.com/photo-1524661135-423995f22d0b?auto=format&fit=crop&w=1600&q=80", // (1) GIS maps / elevation & contours
+    "https://images.unsplash.com/photo-1614730321146-b6fa6a46bcb4?auto=format&fit=crop&w=1600&q=80", // (2) Earth maps from space
+    "https://images.unsplash.com/photo-1451187580459-43490279c0fa?auto=format&fit=crop&w=1600&q=80", // (3) Satellite night images of earth
+    "https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?auto=format&fit=crop&w=1600&q=80", // (4) GIS map of Bangladesh river delta systems
+    "https://images.unsplash.com/photo-1548345680-f5475ea5df84?auto=format&fit=crop&w=1600&q=80", // (5) Urban maps of Bangladesh city street planning
+    "https://images.unsplash.com/photo-1501854140801-50d01698950b?auto=format&fit=crop&w=1600&q=80"  // (6) Complex Maps of Bangladesh from satellite
   ];
 
   useEffect(() => {
     const timer = setInterval(() => {
       setBgIndex((prev) => (prev + 1) % backgroundImages.length);
-    }, 2000);
+    }, 4000); // 4 seconds interval to allow 2 seconds full show + 2 seconds crossfade
     return () => clearInterval(timer);
   }, []);
   
@@ -73,9 +74,59 @@ export default function HomeView({ notices, students, insiders = [], onNavigate 
     safeStorage.setItem("urp_brainstorm_ideas", JSON.stringify(updated));
   };
 
-  const latestNotice = notices[0] || {
+  const latestNotice: Notice = notices[0] || {
+    id: "default-none",
     title: "No active notices",
-    content: "Check back later for official announcements."
+    content: "Check back later for official announcements.",
+    date: new Date().toISOString().split("T")[0],
+    author: "Dept. Office"
+  };
+
+  const formatNoticeDateTime = (notice: Notice) => {
+    const dateStr = notice.publish_date || notice.date || new Date().toISOString().split("T")[0];
+    let formattedDate = "";
+    try {
+      const dateObj = new Date(dateStr);
+      if (!isNaN(dateObj.getTime())) {
+        formattedDate = dateObj.toLocaleDateString("en-US", {
+          year: "numeric",
+          month: "short",
+          day: "numeric",
+        });
+      } else {
+        formattedDate = dateStr;
+      }
+    } catch {
+      formattedDate = dateStr;
+    }
+
+    let formattedTime = "";
+    if (notice.publish_time) {
+      const timeStr = notice.publish_time.trim();
+      if (timeStr.toLowerCase().includes("am") || timeStr.toLowerCase().includes("pm")) {
+        formattedTime = timeStr;
+      } else {
+        try {
+          const match = timeStr.match(/^(\d{1,2}):(\d{2})(?::\d{2})?$/);
+          if (match) {
+            let hours = parseInt(match[1], 10);
+            const minutes = match[2];
+            const ampm = hours >= 12 ? "PM" : "AM";
+            hours = hours % 12;
+            hours = hours ? hours : 12;
+            formattedTime = `${hours}:${minutes} ${ampm}`;
+          } else {
+            formattedTime = timeStr;
+          }
+        } catch {
+          formattedTime = timeStr;
+        }
+      }
+    } else {
+      formattedTime = "12:00 PM";
+    }
+
+    return { date: formattedDate, time: formattedTime };
   };
 
   // Dynamically resolve icons and construct insiders array
@@ -157,15 +208,15 @@ export default function HomeView({ notices, students, insiders = [], onNavigate 
   return (
     <div id="home-view" className="space-y-16 pb-16">
       {/* Sleek Layout combining side-bar and Hero - borderless and barrieless */}
-      <section className="relative flex overflow-hidden min-h-[calc(100vh-4rem)] w-full text-stone-900 dark:text-white">
-        {/* Animated Background Maps & RUET Slideshow with 75% transparency (0.25 opacity) and side-to-side panning */}
+      <section className="relative flex overflow-hidden min-h-screen w-full text-stone-900 dark:text-white pt-16">
+        {/* Animated Background Maps & RUET Slideshow with 60% transparency (0.4 opacity) and side-to-side panning */}
         <div className="absolute inset-0 z-0 overflow-hidden pointer-events-none">
           {backgroundImages.map((imgUrl, idx) => (
             <div
               key={idx}
-              className={`absolute inset-0 transition-opacity duration-1000 ease-in-out ${bgIndex === idx ? "opacity-25" : "opacity-0"}`}
+              className={`absolute inset-0 transition-opacity duration-[2000ms] ease-in-out ${bgIndex === idx ? "opacity-40" : "opacity-0"}`}
               style={{
-                opacity: bgIndex === idx ? 0.25 : 0,
+                opacity: bgIndex === idx ? 0.4 : 0,
               }}
             >
               <div 
@@ -210,88 +261,97 @@ export default function HomeView({ notices, students, insiders = [], onNavigate 
             </div>
           </div>
         </div>
-      </section>
-
-      {/* Main Container below full screen hero */}
-      <div className="px-6 md:px-12 max-w-7xl mx-auto space-y-16 w-full">
-        {/* Quick Features Grid (Matching Theme's bento feel) */}
-        <section className="grid grid-cols-1 md:grid-cols-3 gap-0 border border-stone-200 dark:border-stone-850 rounded-2xl bg-white dark:bg-stone-950 overflow-hidden divide-y md:divide-y-0 md:divide-x divide-stone-200 dark:divide-stone-850">
-        
-        {/* Box 1: Quick Notice */}
-        <div 
-          onClick={() => onNavigate("Notice")}
-          className="p-8 card-hover bg-white dark:bg-stone-950 hover:bg-stone-50/50 dark:hover:bg-stone-900/20 text-left flex flex-col justify-between min-h-[220px] cursor-pointer"
-        >
-          <div className="flex justify-between items-start mb-6">
-            <span className="font-mono text-[10px] bg-rose-50 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400 px-2.5 py-1 rounded font-bold uppercase tracking-wider">
-              LATEST NOTICE
-            </span>
-            <span className="text-stone-300 dark:text-stone-750 font-display font-bold text-3xl">01</span>
-          </div>
-          <div>
-            <h3 className="text-xs font-bold uppercase tracking-widest text-stone-600 dark:text-stone-300 mb-1.5 truncate">
-              {latestNotice.title}
-            </h3>
-            <p className="text-xs text-stone-600 dark:text-stone-300 leading-relaxed font-normal line-clamp-3">
-              {latestNotice.content}
-            </p>
-          </div>
-          <div className="mt-4 text-[10px] font-bold text-rose-500 dark:text-rose-400 uppercase tracking-widest flex items-center gap-1">
-            Read Notice Board <ArrowRight className="w-3 h-3" />
-          </div>
-        </div>
-
-        {/* Box 2: Family / Members */}
-        <div 
-          onClick={() => onNavigate("Our Family")}
-          className="p-8 card-hover bg-white dark:bg-stone-950 hover:bg-stone-50/50 dark:hover:bg-stone-900/20 text-left flex flex-col justify-between min-h-[220px] cursor-pointer"
-        >
-          <div className="flex justify-between items-start mb-6">
-            <span className="font-mono text-[10px] bg-orange-50 dark:bg-orange-950/30 text-orange-600 dark:text-orange-400 px-2.5 py-1 rounded font-bold uppercase tracking-wider">
-              BATCH MEMBERS
-            </span>
-            <span className="text-stone-300 dark:text-stone-750 font-display font-bold text-3xl">02</span>
-          </div>
-          <div>
-            <h3 className="text-xs font-bold uppercase tracking-widest text-stone-600 dark:text-stone-300 mb-2">
-              URP'25 Insiders
-            </h3>
-            <div className="flex flex-wrap gap-1.5 mt-2">
-              <span className="text-[9px] font-mono border border-stone-200 dark:border-stone-800 px-2 py-0.5 rounded text-stone-500 dark:text-stone-400">GIS Club</span>
-              <span className="text-[9px] font-mono border border-stone-200 dark:border-stone-800 px-2 py-0.5 rounded text-stone-500 dark:text-stone-400">URP Core</span>
-              <span className="text-[9px] font-mono border border-stone-200 dark:border-stone-800 px-2 py-0.5 rounded text-stone-500 dark:text-stone-400">Photography</span>
+      </section>      {/* Main Container below full screen hero */}
+      <div className="px-4 sm:px-6 md:px-12 max-w-7xl mx-auto space-y-16 w-full">
+        {/* Quick Features Bento Grid */}
+        <section className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          
+          {/* Box 1: Quick Notice with Ultra Premium Rainbow Border */}
+          <div className="latest-notice-rainbow-border hover-lift transition-all duration-300 shadow-xl">
+            <div 
+              onClick={() => onNavigate("Notice")}
+              className="p-8 bg-white dark:bg-stone-950 rounded-[calc(1.5rem-3.5px)] hover:bg-stone-50/50 dark:hover:bg-stone-900/20 text-left flex flex-col justify-between h-full min-h-[220px] cursor-pointer"
+            >
+              <div className="flex justify-between items-start mb-6">
+                <span className="font-mono text-xs bg-rose-50 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400 px-3 py-1.5 rounded font-bold uppercase tracking-widest animate-pulse">
+                  LATEST NOTICE
+                </span>
+                <span className="text-stone-300 dark:text-stone-750 font-display font-bold text-3xl">01</span>
+              </div>
+              <div className="space-y-3.5">
+                <h3 className="text-sm font-bold uppercase tracking-widest text-stone-850 dark:text-white break-words leading-snug">
+                  {latestNotice.title}
+                </h3>
+                <div className="text-[10px] font-mono font-semibold text-rose-600 dark:text-rose-400 flex flex-wrap gap-x-2.5 gap-y-1 items-center bg-rose-50/50 dark:bg-rose-950/20 px-3 py-1.5 rounded-xl border border-rose-100 dark:border-rose-900/30 w-fit">
+                  <span className="flex items-center gap-1">📅 {formatNoticeDateTime(latestNotice).date}</span>
+                  <span className="text-rose-200 dark:text-rose-900">|</span>
+                  <span className="flex items-center gap-1">🕒 {formatNoticeDateTime(latestNotice).time}</span>
+                </div>
+                <p className="text-xs text-stone-600 dark:text-stone-300 leading-relaxed font-normal line-clamp-3">
+                  {latestNotice.content}
+                </p>
+              </div>
+              <div className="mt-4 text-[10px] font-bold text-rose-500 dark:text-rose-400 uppercase tracking-widest flex items-center gap-1">
+                Read Notice Board <ArrowRight className="w-3 h-3" />
+              </div>
             </div>
           </div>
-          <div className="mt-4 text-[10px] font-bold text-rose-500 dark:text-rose-400 uppercase tracking-widest flex items-center gap-1">
-            Browse Family <ArrowRight className="w-3 h-3" />
-          </div>
-        </div>
 
-        {/* Box 3: Cloud / Materials */}
-        <div 
-          onClick={() => onNavigate("Cloud")}
-          className="p-8 card-hover bg-white dark:bg-stone-950 hover:bg-stone-50/50 dark:hover:bg-stone-900/20 text-left flex flex-col justify-between min-h-[220px] cursor-pointer"
-        >
-          <div className="flex justify-between items-start mb-6">
-            <span className="font-mono text-[10px] bg-stone-100 dark:bg-stone-900 text-stone-600 dark:text-stone-400 px-2.5 py-1 rounded font-bold uppercase tracking-wider">
-              DRIVE STORAGE
-            </span>
-            <span className="text-stone-300 dark:text-stone-750 font-display font-bold text-3xl">03</span>
+          {/* Box 2: Family / Members */}
+          <div className="border border-stone-200 dark:border-stone-850 rounded-3xl bg-white dark:bg-stone-950 overflow-hidden shadow-sm hover:shadow-md card-hover transition-all duration-300">
+            <div 
+              onClick={() => onNavigate("Our Family")}
+              className="p-8 hover:bg-stone-50/50 dark:hover:bg-stone-900/20 text-left flex flex-col justify-between h-full min-h-[220px] cursor-pointer"
+            >
+              <div className="flex justify-between items-start mb-6">
+                <span className="font-mono text-[10px] bg-orange-50 dark:bg-orange-950/30 text-orange-600 dark:text-orange-400 px-2.5 py-1 rounded font-bold uppercase tracking-wider">
+                  BATCH MEMBERS
+                </span>
+                <span className="text-stone-300 dark:text-stone-750 font-display font-bold text-3xl">02</span>
+              </div>
+              <div>
+                <h3 className="text-sm font-bold uppercase tracking-widest text-stone-850 dark:text-white mb-2">
+                  URP'25 Insiders
+                </h3>
+                <div className="flex flex-wrap gap-1.5 mt-2">
+                  <span className="text-[9px] font-mono border border-stone-200 dark:border-stone-800 px-2.5 py-1 rounded-xl text-stone-500 dark:text-stone-400">GIS Club</span>
+                  <span className="text-[9px] font-mono border border-stone-200 dark:border-stone-800 px-2.5 py-1 rounded-xl text-stone-500 dark:text-stone-400">URP Core</span>
+                  <span className="text-[9px] font-mono border border-stone-200 dark:border-stone-800 px-2.5 py-1 rounded-xl text-stone-500 dark:text-stone-400">Photography</span>
+                </div>
+              </div>
+              <div className="mt-4 text-[10px] font-bold text-rose-500 dark:text-rose-400 uppercase tracking-widest flex items-center gap-1">
+                Browse Family <ArrowRight className="w-3 h-3" />
+              </div>
+            </div>
           </div>
-          <div>
-            <h3 className="text-xs font-bold uppercase tracking-widest text-stone-600 dark:text-stone-300 mb-1.5">
-              Academic Cloud
-            </h3>
-            <p className="text-xs text-stone-600 dark:text-stone-300 leading-relaxed font-normal">
-              Access 1st to 4th year lecture files, drive folders, book archives, and utility programs.
-            </p>
-          </div>
-          <div className="mt-4 text-[10px] font-bold text-rose-500 dark:text-rose-400 uppercase tracking-widest flex items-center gap-1">
-            Explore Drive <ArrowRight className="w-3 h-3" />
-          </div>
-        </div>
 
-      </section>
+          {/* Box 3: Cloud / Materials */}
+          <div className="border border-stone-200 dark:border-stone-850 rounded-3xl bg-white dark:bg-stone-950 overflow-hidden shadow-sm hover:shadow-md card-hover transition-all duration-300">
+            <div 
+              onClick={() => onNavigate("Cloud")}
+              className="p-8 hover:bg-stone-50/50 dark:hover:bg-stone-900/20 text-left flex flex-col justify-between h-full min-h-[220px] cursor-pointer"
+            >
+              <div className="flex justify-between items-start mb-6">
+                <span className="font-mono text-[10px] bg-stone-100 dark:bg-stone-900 text-stone-600 dark:text-stone-400 px-2.5 py-1 rounded font-bold uppercase tracking-wider">
+                  DRIVE STORAGE
+                </span>
+                <span className="text-stone-300 dark:text-stone-750 font-display font-bold text-3xl">03</span>
+              </div>
+              <div>
+                <h3 className="text-sm font-bold uppercase tracking-widest text-stone-850 dark:text-white mb-2">
+                  Academic Cloud
+                </h3>
+                <p className="text-xs text-stone-600 dark:text-stone-300 leading-relaxed font-normal">
+                  Access 1st to 4th year lecture files, drive folders, book archives, and utility programs.
+                </p>
+              </div>
+              <div className="mt-4 text-[10px] font-bold text-rose-500 dark:text-rose-400 uppercase tracking-widest flex items-center gap-1">
+                Explore Drive <ArrowRight className="w-3 h-3" />
+              </div>
+            </div>
+          </div>
+
+        </section>
 
       {/* URP'25 Insiders bento layout */}
       <section className="w-full space-y-8">

@@ -39,7 +39,7 @@ import AcademicToolsView from "./components/AcademicToolsView";
 import AdminPanelView from "./components/AdminPanelView";
 import Footer from "./components/Footer";
 import GreetingToast from "./components/GreetingToast";
-import ruetLogo from "./assets/images/ruet_urp_logo_1782301017782.jpg";
+import ruetLogo from "./assets/logo";
 
 export default function App() {
   const [activeView, setActiveView] = useState<ViewType>("Home");
@@ -1026,7 +1026,7 @@ export default function App() {
       </AnimatePresence>
 
       {/* Main Content Area - Animated Switcher */}
-      <main className={`flex-1 w-full relative z-10 ${activeView === "Home" ? "" : "px-6 md:px-12 py-10"}`}>
+      <main className={`flex-1 w-full relative z-10 ${activeView === "Home" ? "-mt-16" : "px-4 sm:px-6 md:px-12 py-8 sm:py-10"}`}>
         <AnimatePresence mode="wait">
           <motion.div
             key={activeView}

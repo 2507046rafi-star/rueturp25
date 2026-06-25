@@ -75,7 +75,7 @@ export default function OurFamilyView({ students, onViewImage }: OurFamilyViewPr
   });
 
   return (
-    <div id="our-family-view" className="space-y-8 w-full max-w-none px-4">
+    <div id="our-family-view" className="space-y-8 w-full max-w-7xl mx-auto px-1 sm:px-4">
       {/* View Title */}
       <div className="text-center space-y-2">
         <h2 className="font-display font-extrabold text-3xl tracking-tight text-stone-900 dark:text-white uppercase">

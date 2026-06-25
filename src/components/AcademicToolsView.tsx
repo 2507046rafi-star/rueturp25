@@ -51,7 +51,7 @@ export default function AcademicToolsView() {
   ];
 
   return (
-    <div id="academic-tools-view" className="space-y-10 w-full max-w-none px-4">
+    <div id="academic-tools-view" className="space-y-10 w-full max-w-5xl mx-auto px-1 sm:px-4">
       {/* Header Section */}
       <div className="text-center space-y-3">
         <div className="inline-flex p-3 bg-rose-50 dark:bg-rose-950/30 rounded-2xl border border-rose-100 dark:border-rose-900/50 text-rose-500">

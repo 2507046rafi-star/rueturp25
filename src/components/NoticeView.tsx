@@ -314,7 +314,7 @@ export default function NoticeView({ notices, onViewImage }: NoticeViewProps) {
   };
 
   return (
-    <div id="notice-view" className="space-y-8 w-full max-w-none px-4">
+    <div id="notice-view" className="space-y-8 w-full max-w-5xl mx-auto px-1 sm:px-4">
       {/* Header Section */}
       <div className="text-center space-y-3">
         <div className="inline-flex p-3 bg-rose-50 dark:bg-rose-950/30 rounded-2xl border border-rose-100 dark:border-rose-900/50 text-rose-500">
@@ -342,7 +342,7 @@ export default function NoticeView({ notices, onViewImage }: NoticeViewProps) {
       </div>
 
       {/* Filter and Sort Toolbar */}
-      <div className="bg-white dark:bg-stone-950 p-5 rounded-2xl border border-stone-200 dark:border-stone-850 space-y-4 shadow-sm">
+      <div className="bg-white dark:bg-stone-950 p-4 sm:p-5 rounded-2xl border border-stone-200 dark:border-stone-850 space-y-4 shadow-sm">
         <div className="flex flex-col md:flex-row gap-4 justify-between items-stretch md:items-center">
           {/* Search bar */}
           <div className="relative flex-1">
@@ -419,30 +419,32 @@ export default function NoticeView({ notices, onViewImage }: NoticeViewProps) {
             const cardContent = (
               <div className="space-y-4">
                 {/* Meta details & tags list */}
-                <div className="flex flex-wrap items-center justify-between gap-4">
-                  <div className="flex flex-wrap gap-4 text-xs font-mono text-gray-400">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3.5 pb-2 border-b border-stone-100 dark:border-stone-900/30">
+                  <div className="flex flex-wrap gap-x-4 gap-y-2 text-xs font-mono text-stone-500 dark:text-stone-400">
                     <span className="flex items-center gap-1.5">
-                      <Calendar className="w-3.5 h-3.5 text-rose-400 shrink-0" />
-                      {notice.publish_date 
-                        ? `Published: ${formatDate(notice.publish_date)}${notice.publish_time ? ` at ${notice.publish_time}` : ""}`
-                        : formatDate(notice.date)
-                      }
+                      <Calendar className="w-3.5 h-3.5 text-rose-500 shrink-0" />
+                      <span>
+                        {notice.publish_date 
+                          ? `${formatDate(notice.publish_date)}${notice.publish_time ? ` at ${notice.publish_time}` : ""}`
+                          : formatDate(notice.date)
+                        }
+                      </span>
                     </span>
                     <span className="flex items-center gap-1.5">
-                      <User className="w-3.5 h-3.5 text-orange-400 shrink-0" />
-                      Authored by: {notice.author}
+                      <User className="w-3.5 h-3.5 text-orange-500 shrink-0" />
+                      <span>{notice.author}</span>
                     </span>
                   </div>
 
                   {/* Render tag pill & Print button inside notice cards */}
-                  <div className="flex flex-wrap gap-1.5 items-center">
+                  <div className="flex flex-wrap gap-2 items-center">
                     <button
                       onClick={() => handlePrintNotice(notice)}
-                      className="inline-flex items-center gap-1 px-2.5 py-1 rounded-xl bg-rose-50 hover:bg-rose-100 dark:bg-rose-950/40 dark:hover:bg-rose-900/60 border border-rose-200 dark:border-rose-900/50 text-rose-600 dark:text-rose-400 text-[10px] font-mono font-bold uppercase tracking-wider transition-all duration-200 cursor-pointer shadow-sm hover:scale-[1.02] hover:shadow"
-                      title="Print official document"
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-rose-50 hover:bg-rose-100 dark:bg-rose-950/40 dark:hover:bg-rose-900/60 border border-rose-200 dark:border-rose-900/50 text-rose-600 dark:text-rose-400 text-[10.5px] font-mono font-bold uppercase tracking-wider transition-all duration-200 cursor-pointer shadow-sm hover:scale-[1.03] hover:shadow"
+                      title="Print notice or Save as PDF file"
                     >
-                      <Printer className="w-3 h-3 text-rose-500 shrink-0" />
-                      <span>Print Document</span>
+                      <Printer className="w-3.5 h-3.5 text-rose-500 shrink-0" />
+                      <span>Print / Save as PDF</span>
                     </button>
                     {tags.map((tg, i) => (
                       <span 

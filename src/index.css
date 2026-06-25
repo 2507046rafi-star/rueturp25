@@ -197,6 +197,35 @@ body {
   }
 }
 
+/* Super unique rainbow gradient with smooth rotation and subtle pulsing glow */
+.latest-notice-rainbow-border {
+  position: relative;
+  padding: 3.5px;
+  background: linear-gradient(90deg, #f43f5e, #fb923c, #10b981, #06b6d4, #3b82f6, #8b5cf6, #ec4899, #f43f5e);
+  background-size: 400% 400%;
+  animation: border-glow-rotate 4s linear infinite;
+  border-radius: 1.5rem;
+}
+
+.latest-notice-rainbow-border::before {
+  content: '';
+  position: absolute;
+  inset: -4px;
+  background: linear-gradient(90deg, #f43f5e, #fb923c, #10b981, #06b6d4, #3b82f6, #8b5cf6, #ec4899, #f43f5e);
+  background-size: 400% 400%;
+  animation: border-glow-rotate 4s linear infinite;
+  z-index: -1;
+  filter: blur(12px);
+  opacity: 0.6;
+  border-radius: inherit;
+  transition: opacity 0.3s ease-in-out;
+}
+
+.latest-notice-rainbow-border:hover::before {
+  opacity: 0.95;
+  filter: blur(16px);
+}
+
 .premium-glow-border {
   position: relative;
   border: none;
