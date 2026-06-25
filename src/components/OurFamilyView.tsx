@@ -14,7 +14,7 @@ import {
   Filter,
   Users
 } from "lucide-react";
-import { Student } from "../types";
+import { Student, getCacheBustedUrl } from "../types";
 
 interface OurFamilyViewProps {
   students: Student[];
@@ -153,13 +153,13 @@ export default function OurFamilyView({ students, onViewImage }: OurFamilyViewPr
                       {/* Top Centered Profile Picture */}
                       <div className="flex justify-center mb-4">
                         <div 
-                          onClick={() => student.avatar && onViewImage?.(student.avatar, student.name)}
+                          onClick={() => student.avatar && onViewImage?.(getCacheBustedUrl(student.avatar), student.name)}
                           className={`w-24 h-24 rounded-full overflow-hidden border-2 border-rose-500/20 shadow-md flex items-center justify-center bg-gray-100 dark:bg-gray-800 shrink-0 ${student.avatar ? "cursor-pointer hover:scale-105 transition-transform duration-300" : ""}`}
                           title={student.avatar ? "Click to view full image" : undefined}
                         >
                           {student.avatar ? (
                             <img
-                              src={student.avatar}
+                              src={getCacheBustedUrl(student.avatar)}
                               alt={student.name}
                               referrerPolicy="no-referrer"
                               className="w-full h-full object-cover"
@@ -267,13 +267,13 @@ export default function OurFamilyView({ students, onViewImage }: OurFamilyViewPr
                 {/* Overlap Avatar */}
                 <div className="flex justify-center -mt-14 mb-3">
                   <div 
-                    onClick={() => selectedStudent.avatar && onViewImage?.(selectedStudent.avatar, selectedStudent.name)}
+                    onClick={() => selectedStudent.avatar && onViewImage?.(getCacheBustedUrl(selectedStudent.avatar), selectedStudent.name)}
                     className={`w-28 h-28 rounded-full overflow-hidden border-4 border-white dark:border-gray-900 shadow-lg bg-gray-100 dark:bg-gray-800 flex items-center justify-center shrink-0 ${selectedStudent.avatar ? "cursor-pointer hover:scale-105 transition-transform duration-300" : ""}`}
                     title={selectedStudent.avatar ? "Click to view full image" : undefined}
                   >
                     {selectedStudent.avatar ? (
                       <img
-                        src={selectedStudent.avatar}
+                        src={getCacheBustedUrl(selectedStudent.avatar)}
                         alt={selectedStudent.name}
                         referrerPolicy="no-referrer"
                         className="w-full h-full object-cover"

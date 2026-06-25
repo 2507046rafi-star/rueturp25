@@ -117,3 +117,24 @@ export const safeSessionStorage = {
     }
   }
 };
+
+// Global page-load timestamp used for cache-busting student avatars and images
+export const PAGE_LOAD_TIMESTAMP = Date.now();
+
+export function getCacheBustedUrl(url: string | undefined): string {
+  if (!url) return "";
+  if (url.startsWith("data:")) return url;
+  
+  let cleanUrl = url;
+  try {
+    const urlObj = new URL(url);
+    urlObj.searchParams.delete("cb");
+    cleanUrl = urlObj.toString();
+  } catch (e) {
+    cleanUrl = url.split("?cb=")[0].split("&cb=")[0];
+  }
+  
+  const buster = `cb=${PAGE_LOAD_TIMESTAMP}`;
+  return cleanUrl.includes("?") ? `${cleanUrl}&${buster}` : `${cleanUrl}?${buster}`;
+}
+

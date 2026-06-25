@@ -8,7 +8,7 @@ export const DEFAULT_STUDENTS: Student[] = [
     emails: ["abrar.shakib@ruet.ac.bd", "shakib.urp25@gmail.com"],
     facebook: "https://facebook.com/abrar.shakib.urp",
     bio: "Passionate about geographic information systems (GIS), urban zoning policies, and smart city infrastructure design. Always trying to bridge academic learning with practical field applications.",
-    avatar: "https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?auto=format&fit=crop&w=300&q=80",
+    avatar: "",
     tags: ["CR", "GIS Enthusiast"]
   },
   {
@@ -18,7 +18,7 @@ export const DEFAULT_STUDENTS: Student[] = [
     emails: ["fariha.sultana@ruet.ac.bd"],
     facebook: "https://facebook.com/fariha.sultana.urp25",
     bio: "Enthusiastic about sustainable transport systems, environmental impact assessment (EIA), and regional development frameworks. Active volunteer in local green initiatives.",
-    avatar: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=300&q=80",
+    avatar: "",
     tags: ["Academic Rep"]
   },
   {
@@ -28,7 +28,7 @@ export const DEFAULT_STUDENTS: Student[] = [
     emails: ["sadaturp25@gmail.com", "sadat.urp.ruet@gmail.com"],
     facebook: "https://facebook.com/sadat.rahman.urp25",
     bio: "Liaison Officer and Student Representative. Highly interested in Urban Economics, Spatial Analytics, and Community Engagement. Managing batch databases, cloud collections, and alumni links.",
-    avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=300&q=80",
+    avatar: "",
     tags: ["CR", "Web Coordinator"]
   },
   {
@@ -38,7 +38,7 @@ export const DEFAULT_STUDENTS: Student[] = [
     emails: ["tanvir.urp25@ruet.ac.bd"],
     facebook: "https://facebook.com/tanvir.ahmed.urp",
     bio: "Fascinated by high-end architectural renderings, urban landscape planning, and AutoCAD modeling. Passionate about professional photography and capturing campus life.",
-    avatar: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=300&q=80",
+    avatar: "",
     tags: ["Photography Lead"]
   },
   {
@@ -48,7 +48,7 @@ export const DEFAULT_STUDENTS: Student[] = [
     emails: ["zerin.tasnim@ruet.ac.bd", "zerin.urp25@gmail.com"],
     facebook: "https://facebook.com/zerin.tasnim.urp",
     bio: "Specializing in Disaster Management planning and climate resilient housing structures. I love painting, architectural sketching, and organizing batch programs.",
-    avatar: "https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&w=300&q=80",
+    avatar: "",
     tags: ["Cultural Coordinator"]
   },
   {
@@ -58,7 +58,7 @@ export const DEFAULT_STUDENTS: Student[] = [
     emails: ["imran.chy@ruet.ac.bd"],
     facebook: "https://facebook.com/imran.chy.urp25",
     bio: "GIS developer and remote sensing programmer. Dedicated to creating modern Python-based analytical tools for mapping local housing density and zoning trends.",
-    avatar: "https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?auto=format&fit=crop&w=300&q=80",
+    avatar: "",
     tags: ["Tech Expert"]
   }
 ];

@@ -56,10 +56,10 @@ export default function App() {
   const [globalSearchQuery, setGlobalSearchQuery] = useState("");
   const [noteParkItems, setNoteParkItems] = useState<any[]>([]);
 
-  // Global Sync States (initially fallback to defaults, populated dynamically from Supabase)
-  const [students, setStudents] = useState<Student[]>(DEFAULT_STUDENTS);
-  const [notices, setNotices] = useState<Notice[]>(DEFAULT_NOTICES);
-  const [galleryItems, setGalleryItems] = useState<GalleryItem[]>(DEFAULT_GALLERY);
+  // Global Sync States (initially empty to ensure we fetch freshly and exclusively from the live Supabase database, avoiding stale data and reappearances of deleted items)
+  const [students, setStudents] = useState<Student[]>([]);
+  const [notices, setNotices] = useState<Notice[]>([]);
+  const [galleryItems, setGalleryItems] = useState<GalleryItem[]>([]);
   const [adminSettings, setAdminSettings] = useState<AdminSettings>(DEFAULT_ADMIN_SETTINGS);
   const [contactInfo, setContactInfo] = useState<{ title?: string; email: string; phone: string }[]>([
     { title: "General Contact", email: "sadaturp25@gmail.com", phone: "01750-121454" },

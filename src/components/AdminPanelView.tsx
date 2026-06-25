@@ -21,7 +21,7 @@ import {
   ShoppingCart,
   RefreshCw
 } from "lucide-react";
-import { Student, Notice, GalleryItem, AdminSettings } from "../types";
+import { Student, Notice, GalleryItem, AdminSettings, getCacheBustedUrl } from "../types";
 import { supabase } from "../lib/supabaseClient";
 
 interface AdminPanelViewProps {
@@ -215,7 +215,7 @@ export default function AdminPanelView({
       emails: emailsArray.length ? emailsArray : ["sadaturp25@gmail.com"],
       facebook: studFacebook || "https://facebook.com",
       bio: studBio || "Student of RUET URP'25 Batch.",
-      avatar: studAvatar || "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=150&q=80",
+      avatar: studAvatar ? (studAvatar.startsWith("data:") ? studAvatar : (studAvatar.includes("?") ? `${studAvatar.split("?")[0]}?t=${Date.now()}` : `${studAvatar}?t=${Date.now()}`)) : "",
       tags: tagsArray
     };
 
@@ -777,7 +777,13 @@ export default function AdminPanelView({
                       className="p-3 rounded-lg bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-750 flex justify-between items-center gap-4 text-xs"
                     >
                       <div className="flex items-center gap-3">
-                        <img src={s.avatar} alt={s.name} className="w-8 h-8 rounded-full object-cover border border-rose-500/10 shrink-0" />
+                        {s.avatar ? (
+                          <img src={getCacheBustedUrl(s.avatar)} alt={s.name} className="w-8 h-8 rounded-full object-cover border border-rose-500/10 shrink-0" />
+                        ) : (
+                          <div className="w-8 h-8 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center border border-rose-500/10 shrink-0">
+                            <span className="text-[10px] text-gray-400">👤</span>
+                          </div>
+                        )}
                         <div>
                           <span className="font-bold text-gray-800 dark:text-white uppercase flex items-center gap-1">
                             {s.name} {s.tags.includes("CR") && <Star className="w-3.5 h-3.5 text-rose-500 fill-rose-500" />}
