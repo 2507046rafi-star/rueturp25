@@ -209,8 +209,127 @@ export default function OurFamilyView({ students, onViewImage, isLoading }: OurF
             >
               {sortedStudents.map((student) => {
                 const isCR = student.tags?.includes("CR");
+                const isExpanded = selectedStudent?.roll === student.roll;
                 
-                const cardContent = (
+                const cardContent = isExpanded ? (
+                  <div className="text-center flex flex-col justify-between h-full w-full">
+                    {/* CR Star Indicator */}
+                    {isCR && (
+                      <div className="absolute top-3 right-3 bg-rose-50 dark:bg-rose-950/50 p-1.5 rounded-full border border-rose-100 dark:border-rose-900/50 z-10" title="Class Representative">
+                        <Star className="w-4 h-4 text-rose-500 fill-rose-500" />
+                      </div>
+                    )}
+
+                    <div>
+                      {/* Top Centered Profile Picture */}
+                      <div className="flex justify-center mb-4">
+                        <div 
+                          onClick={() => student.avatar && onViewImage?.(getCacheBustedUrl(student.avatar), student.name)}
+                          className={`w-28 h-28 rounded-full overflow-hidden border-4 border-rose-500/30 shadow-md flex items-center justify-center bg-stone-50 dark:bg-stone-900 shrink-0 ${student.avatar ? "cursor-pointer hover:scale-105 transition-transform duration-300" : ""}`}
+                          title={student.avatar ? "Click to view full image" : undefined}
+                        >
+                          {student.avatar ? (
+                            <AvatarImage
+                              src={getCacheBustedUrl(student.avatar)}
+                              alt={student.name}
+                              fallbackClass="w-12 h-12 text-gray-400"
+                            />
+                          ) : (
+                            <User className="w-12 h-12 text-gray-400" />
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Name & Roll */}
+                      <h3 className="font-display font-bold text-xl text-stone-800 dark:text-white uppercase tracking-tight">
+                        {student.name}
+                      </h3>
+                      <p className="font-mono text-xs text-orange-500 font-semibold mt-0.5">
+                        Roll: {student.roll}
+                      </p>
+
+                      {/* Display Tags on Roster */}
+                      <div className="flex flex-wrap justify-center gap-1 mt-2.5">
+                        {student.tags?.map(t => (
+                          <span 
+                            key={t} 
+                            className={`text-[9px] font-mono px-2 py-0.5 rounded border ${
+                              t === "CR" 
+                                ? "bg-rose-500/10 text-rose-500 border-rose-500/20 font-bold" 
+                                : "bg-stone-50 dark:bg-stone-900 text-stone-500 border-stone-200 dark:border-stone-800"
+                            }`}
+                          >
+                            {t}
+                          </span>
+                        ))}
+                      </div>
+
+                      {/* Bio */}
+                      <div className="mt-4 p-3.5 rounded-xl bg-stone-50 dark:bg-stone-900/40 border border-stone-100 dark:border-stone-900 text-center">
+                        <p className="text-xs text-stone-600 dark:text-stone-350 leading-relaxed italic">
+                          "{student.bio || "No bio available for this student."}"
+                        </p>
+                      </div>
+
+                      {/* Contact Channels */}
+                      <div className="mt-4 pt-4 border-t border-stone-100 dark:border-stone-900/50 text-left space-y-3">
+                        {/* Mobiles */}
+                        <div className="space-y-1.5">
+                          <span className="text-[10px] text-gray-400 uppercase font-mono block">Mobiles</span>
+                          {student.mobiles.map((mobile, idx) => (
+                            <a
+                              href={`tel:${mobile}`}
+                              key={idx}
+                              className="flex items-center gap-2 p-2 rounded-lg bg-stone-50 hover:bg-rose-50/50 dark:bg-stone-900/30 dark:hover:bg-rose-950/10 border border-stone-150 dark:border-stone-900/60 transition group font-mono text-xs text-stone-700 dark:text-stone-200"
+                            >
+                              <Phone className="w-3.5 h-3.5 text-rose-500 shrink-0 group-hover:scale-110 transition-transform" />
+                              <span>{mobile}</span>
+                            </a>
+                          ))}
+                        </div>
+
+                        {/* Emails */}
+                        {student.emails && student.emails.length > 0 && (
+                          <div className="space-y-1.5 pt-1.5 border-t border-stone-50 dark:border-stone-900/30">
+                            <span className="text-[10px] text-gray-400 uppercase font-mono block">Emails</span>
+                            {student.emails.map((email, idx) => (
+                              <a
+                                href={`mailto:${email}`}
+                                key={idx}
+                                className="flex items-center gap-2 p-2 rounded-lg bg-stone-50 hover:bg-orange-50/50 dark:bg-stone-900/30 dark:hover:bg-orange-950/10 border border-stone-150 dark:border-stone-900/60 transition group truncate text-xs text-stone-700 dark:text-stone-200"
+                              >
+                                <Mail className="w-3.5 h-3.5 text-orange-500 shrink-0 group-hover:scale-110 transition-transform" />
+                                <span className="truncate">{email}</span>
+                              </a>
+                            ))}
+                          </div>
+                        )}
+
+                        {/* Facebook ID */}
+                        {student.facebook && (
+                          <div className="pt-2">
+                            <a
+                              href={student.facebook}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="flex items-center justify-center gap-2 p-2.5 rounded-lg bg-blue-50 dark:bg-blue-950/20 hover:bg-blue-100 dark:hover:bg-blue-950/40 border border-blue-100 dark:border-blue-900/40 transition group font-semibold text-blue-700 dark:text-blue-300 text-xs cursor-pointer w-full"
+                            >
+                              <Facebook className="w-4 h-4 text-blue-600 shrink-0 group-hover:scale-110 transition-transform" />
+                              <span>Connect on Facebook</span>
+                            </a>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
+                    <button
+                      onClick={() => setSelectedStudent(null)}
+                      className="mt-6 w-full py-2.5 bg-rose-500 hover:bg-rose-600 text-white rounded-lg text-xs font-semibold tracking-wider uppercase transition-all duration-300 flex items-center justify-center gap-1.5 cursor-pointer shadow-sm hover:shadow-md animate-fade-in"
+                    >
+                      <X className="w-3.5 h-3.5" /> Close Profile
+                    </button>
+                  </div>
+                ) : (
                   <div className="text-center flex flex-col justify-between h-full w-full">
                     {/* CR Star Indicator */}
                     {isCR && (
@@ -307,6 +426,7 @@ export default function OurFamilyView({ students, onViewImage, isLoading }: OurF
                   return (
                     <motion.div
                       key={student.roll}
+                      layout
                       variants={{
                         hidden: { opacity: 0, y: 15, scale: 0.98 },
                         show: { 
@@ -316,7 +436,7 @@ export default function OurFamilyView({ students, onViewImage, isLoading }: OurF
                           transition: { type: "spring", stiffness: 100, damping: 15 }
                         }
                       }}
-                      className="premium-border-container shadow-md hover:shadow-[0_12px_24px_-8px_rgba(244,63,94,0.25)] hover-lift transition-all duration-300"
+                      className={`premium-border-container shadow-md hover:shadow-[0_12px_24px_-8px_rgba(244,63,94,0.25)] transition-all duration-300 ${isExpanded ? "ring-2 ring-rose-500 dark:ring-rose-400" : "hover-lift"}`}
                     >
                       <div className="premium-border-inner bg-white dark:bg-stone-950 p-6 relative overflow-hidden text-center flex flex-col justify-between h-full">
                         {cardContent}
@@ -328,6 +448,7 @@ export default function OurFamilyView({ students, onViewImage, isLoading }: OurF
                 return (
                   <motion.div
                     key={student.roll}
+                    layout
                     variants={{
                       hidden: { opacity: 0, y: 15, scale: 0.98 },
                       show: { 
@@ -337,7 +458,7 @@ export default function OurFamilyView({ students, onViewImage, isLoading }: OurF
                         transition: { type: "spring", stiffness: 100, damping: 15 }
                       }
                     }}
-                    className="premium-border-container shadow-sm hover:shadow-[0_10px_20px_-10px_rgba(244,63,94,0.15)] hover-lift transition-all duration-300"
+                    className={`premium-border-container shadow-sm hover:shadow-[0_10px_20px_-10px_rgba(244,63,94,0.15)] transition-all duration-300 ${isExpanded ? "ring-2 ring-rose-500 dark:ring-rose-400" : "hover-lift"}`}
                   >
                     <div className="premium-border-inner bg-white dark:bg-stone-950 p-6 relative overflow-hidden text-center flex flex-col justify-between h-full">
                       {cardContent}
@@ -354,155 +475,6 @@ export default function OurFamilyView({ students, onViewImage, isLoading }: OurF
           )}
         </div>
       )}
-
-      {/* Full Student Profile Modal */}
-      <AnimatePresence>
-        {selectedStudent && (
-          <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-            <motion.div
-              key={selectedStudent.roll}
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.95 }}
-              transition={{ duration: 0.2, ease: "easeOut" }}
-              className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-2xl max-w-lg w-full overflow-hidden shadow-2xl relative"
-            >
-              {/* Top cover decoration */}
-              <div className="h-28 bg-gradient-to-r from-rose-500 to-orange-500 relative">
-                <button
-                  onClick={() => setSelectedStudent(null)}
-                  className="absolute top-4 right-4 p-1.5 rounded-full bg-white/20 hover:bg-white/40 border border-white/20 text-white hover:text-gray-100 transition cursor-pointer"
-                >
-                  <X className="w-4 h-4" />
-                </button>
-              </div>
-
-              {/* Profile body content */}
-              <div className="px-6 pb-6 pt-0 relative">
-                {/* Overlap Avatar */}
-                <div className="flex justify-center -mt-14 mb-3">
-                  <div 
-                    onClick={() => selectedStudent.avatar && onViewImage?.(getCacheBustedUrl(selectedStudent.avatar), selectedStudent.name)}
-                    className={`w-28 h-28 rounded-full overflow-hidden border-4 border-white dark:border-gray-900 shadow-lg bg-gray-100 dark:bg-gray-800 flex items-center justify-center shrink-0 ${selectedStudent.avatar ? "cursor-pointer hover:scale-105 transition-transform duration-300" : ""}`}
-                    title={selectedStudent.avatar ? "Click to view full image" : undefined}
-                  >
-                    {selectedStudent.avatar ? (
-                      <AvatarImage
-                        src={getCacheBustedUrl(selectedStudent.avatar)}
-                        alt={selectedStudent.name}
-                        fallbackClass="w-12 h-12 text-gray-400"
-                      />
-                    ) : (
-                      <User className="w-12 h-12 text-gray-400" />
-                    )}
-                  </div>
-                </div>
-
-                <div className="text-center">
-                  <h3 className="font-display font-bold text-2xl text-gray-900 dark:text-white uppercase tracking-tight flex items-center justify-center gap-1.5">
-                    {selectedStudent.name}
-                    {selectedStudent.tags?.includes("CR") && (
-                      <span className="inline-block text-rose-500" title="Class Representative">
-                        <Star className="w-5 h-5 fill-rose-500 inline" />
-                      </span>
-                    )}
-                  </h3>
-                  <p className="font-mono text-xs text-orange-500 font-semibold mt-1">
-                    RUET URP Batch 2025 • Roll: {selectedStudent.roll}
-                  </p>
-
-                  {/* Tags */}
-                  <div className="flex flex-wrap justify-center gap-1.5 mt-3">
-                    {selectedStudent.tags?.map(t => (
-                      <span
-                        key={t}
-                        className={`text-[10px] font-mono px-2.5 py-0.5 rounded border uppercase tracking-wider ${
-                          t === "CR"
-                            ? "bg-rose-500/10 text-rose-500 border-rose-500/20 font-bold"
-                            : "bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300 border-gray-200 dark:border-gray-700"
-                        }`}
-                      >
-                        {t}
-                      </span>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Bio */}
-                <div className="mt-5 p-4 rounded-xl bg-gray-50 dark:bg-gray-800/50 border border-gray-100 dark:border-gray-800 text-center">
-                  <p className="text-xs text-gray-600 dark:text-gray-300 leading-relaxed italic">
-                    "{selectedStudent.bio || "No bio available for this student."}"
-                  </p>
-                </div>
-
-                {/* Extended info panel */}
-                <div className="mt-5 space-y-3.5">
-                  <h4 className="text-xs font-mono font-bold tracking-widest text-gray-400 uppercase border-b border-gray-100 dark:border-gray-800 pb-1.5">
-                    Contact Channels
-                  </h4>
-
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
-                    {/* Mobile list */}
-                    <div className="space-y-2">
-                      <span className="text-[10px] text-gray-400 uppercase font-mono block">Mobiles</span>
-                      {selectedStudent.mobiles.map((mobile, idx) => (
-                        <a
-                          href={`tel:${mobile}`}
-                          key={idx}
-                          className="flex items-center gap-2 p-2 rounded-lg bg-gray-50 hover:bg-rose-50 dark:bg-gray-800/30 dark:hover:bg-rose-950/20 border border-gray-150 dark:border-gray-800/60 transition group font-mono"
-                        >
-                          <Phone className="w-3.5 h-3.5 text-rose-500 shrink-0 group-hover:scale-110 transition-transform" />
-                          <span className="text-gray-700 dark:text-gray-200">{mobile}</span>
-                        </a>
-                      ))}
-                    </div>
-
-                    {/* Email list */}
-                    <div className="space-y-2">
-                      <span className="text-[10px] text-gray-400 uppercase font-mono block">Email Addresses</span>
-                      {selectedStudent.emails.map((email, idx) => (
-                        <a
-                          href={`mailto:${email}`}
-                          key={idx}
-                          className="flex items-center gap-2 p-2 rounded-lg bg-gray-50 hover:bg-orange-50 dark:bg-gray-800/30 dark:hover:bg-orange-950/20 border border-gray-150 dark:border-gray-800/60 transition group truncate"
-                        >
-                          <Mail className="w-3.5 h-3.5 text-orange-500 shrink-0 group-hover:scale-110 transition-transform" />
-                          <span className="text-gray-700 dark:text-gray-200 truncate">{email}</span>
-                        </a>
-                      ))}
-                    </div>
-                  </div>
-
-                  {/* Social Profile */}
-                  {selectedStudent.facebook && (
-                    <div className="pt-2">
-                      <a
-                        href={selectedStudent.facebook}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="flex items-center justify-center gap-2 p-2.5 rounded-lg bg-blue-50 dark:bg-blue-950/20 hover:bg-blue-100 dark:hover:bg-blue-950/40 border border-blue-100 dark:border-blue-900/40 transition group font-semibold text-blue-700 dark:text-blue-300 text-xs cursor-pointer"
-                      >
-                        <Facebook className="w-4 h-4 text-blue-600 shrink-0 group-hover:scale-110 transition-transform" />
-                        <span>Connect on Facebook</span>
-                      </a>
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              {/* Close footer */}
-              <div className="p-4 bg-gray-50 dark:bg-gray-800/50 border-t border-gray-150 dark:border-gray-800 flex justify-end gap-2">
-                <button
-                  onClick={() => setSelectedStudent(null)}
-                  className="px-4 py-2 rounded-lg bg-rose-500 hover:bg-rose-600 text-white text-xs font-semibold transition cursor-pointer"
-                >
-                  Done
-                </button>
-              </div>
-            </motion.div>
-          </div>
-        )}
-      </AnimatePresence>
     </div>
   );
 }
