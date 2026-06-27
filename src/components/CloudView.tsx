@@ -11,7 +11,12 @@ import {
   Server
 } from "lucide-react";
 
-export default function CloudView() {
+interface CloudViewProps {
+  cloudDriveUrl?: string;
+  academicDriveUrl?: string;
+}
+
+export default function CloudView({ cloudDriveUrl, academicDriveUrl }: CloudViewProps) {
   const [selectedYear, setSelectedYear] = useState<number | null>(1);
 
   const yearsData = [
@@ -22,12 +27,12 @@ export default function CloudView() {
       drives: [
         {
           name: "Drive - 01",
-          url: "https://drive.google.com/drive/folders/1Lto8hLFOJ13Evd8wNbr_Gt7s_nZRLBtB",
+          url: cloudDriveUrl || "https://drive.google.com/drive/folders/1Lto8hLFOJ13Evd8wNbr_Gt7s_nZRLBtB",
           desc: ""
         },
         {
           name: "Drive - 02",
-          url: "https://drive.google.com/drive/folders/1EprFnQrzZ3HafRD2lbOFNHosqAxbmQ_i",
+          url: academicDriveUrl || "https://drive.google.com/drive/folders/1EprFnQrzZ3HafRD2lbOFNHosqAxbmQ_i",
           desc: ""
         }
       ]
@@ -39,12 +44,12 @@ export default function CloudView() {
       drives: [
         {
           name: "Drive - 01",
-          url: "https://drive.google.com/drive/folders/1wfKVYklIfHc17u8uv6NHgrmCgVdQGMgg?usp=drive_link",
+          url: academicDriveUrl || "https://drive.google.com/drive/folders/1wfKVYklIfHc17u8uv6NHgrmCgVdQGMgg?usp=drive_link",
           desc: ""
         },
         {
           name: "Drive - 02",
-          url: "https://drive.google.com/drive/folders/1EprFnQrzZ3HafRD2lbOFNHosqAxbmQ_i",
+          url: cloudDriveUrl || "https://drive.google.com/drive/folders/1EprFnQrzZ3HafRD2lbOFNHosqAxbmQ_i",
           desc: ""
         }
       ]
@@ -56,12 +61,12 @@ export default function CloudView() {
       drives: [
         {
           name: "Drive - 01",
-          url: "https://drive.google.com/drive/folders/1Lto8hLFOJ13Evd8wNbr_Gt7s_nZRLBtB",
+          url: cloudDriveUrl || "https://drive.google.com/drive/folders/1Lto8hLFOJ13Evd8wNbr_Gt7s_nZRLBtB",
           desc: ""
         },
         {
           name: "Drive - 02",
-          url: "https://drive.google.com/drive/folders/1EprFnQrzZ3HafRD2lbOFNHosqAxbmQ_i",
+          url: academicDriveUrl || "https://drive.google.com/drive/folders/1EprFnQrzZ3HafRD2lbOFNHosqAxbmQ_i",
           desc: ""
         }
       ]
@@ -73,12 +78,12 @@ export default function CloudView() {
       drives: [
         {
           name: "Drive - 01",
-          url: "https://drive.google.com/drive/folders/1Lto8hLFOJ13Evd8wNbr_Gt7s_nZRLBtB",
+          url: cloudDriveUrl || "https://drive.google.com/drive/folders/1Lto8hLFOJ13Evd8wNbr_Gt7s_nZRLBtB",
           desc: ""
         },
         {
           name: "Drive - 02",
-          url: "https://drive.google.com/drive/folders/1wfKVYklIfHc17u8uv6NHgrmCgVdQGMgg?usp=drive_link",
+          url: academicDriveUrl || "https://drive.google.com/drive/folders/1wfKVYklIfHc17u8uv6NHgrmCgVdQGMgg?usp=drive_link",
           desc: ""
         }
       ]

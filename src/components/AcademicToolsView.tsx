@@ -10,7 +10,11 @@ import {
   Compass
 } from "lucide-react";
 
-export default function AcademicToolsView() {
+interface AcademicToolsViewProps {
+  academicDriveUrl?: string;
+}
+
+export default function AcademicToolsView({ academicDriveUrl }: AcademicToolsViewProps) {
   const tools = [
     {
       id: "cover",
@@ -25,7 +29,7 @@ export default function AcademicToolsView() {
       id: "software",
       title: "Software Drive",
       description: "Direct download links to essential softwares including AutoCAD, ArcGIS, QGIS, SketchUp, and useful projection plugins.",
-      url: "https://drive.google.com/drive/folders/1wfKVYklIfHc17u8uv6NHgrmCgVdQGMgg?usp=drive_link",
+      url: academicDriveUrl || "https://drive.google.com/drive/folders/1wfKVYklIfHc17u8uv6NHgrmCgVdQGMgg?usp=drive_link",
       icon: Cpu,
       badge: "Google Drive Folder",
       color: "from-blue-500/10 to-indigo-500/10 border-blue-500/20 text-blue-500"

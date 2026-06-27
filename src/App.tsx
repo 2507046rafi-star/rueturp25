@@ -30,7 +30,6 @@ import {
 } from "./data/defaultData";
 import { supabase } from "./lib/supabaseClient";
 
-import ColorfulRain from "./components/ColorfulRain";
 import HomeView from "./components/HomeView";
 import OurFamilyView from "./components/OurFamilyView";
 import NoticeView from "./components/NoticeView";
@@ -38,8 +37,8 @@ import CloudView from "./components/CloudView";
 import AcademicToolsView from "./components/AcademicToolsView";
 import AdminPanelView from "./components/AdminPanelView";
 import Footer from "./components/Footer";
-import GreetingToast from "./components/GreetingToast";
 import ruetLogo from "./assets/logo";
+import ColorfulRain from "./components/ColorfulRain";
 
 export default function App() {
   const [activeView, setActiveView] = useState<ViewType>("Home");
@@ -54,42 +53,56 @@ export default function App() {
   const [globalSearchOpen, setGlobalSearchOpen] = useState(false);
   const [globalSearchQuery, setGlobalSearchQuery] = useState("");
 
-  // Global Sync States (initially populated with defaults to guarantee immediate, bug-free rendering, which are updated instantly on successful database connection)
-  const [students, setStudents] = useState<Student[]>(DEFAULT_STUDENTS);
-  const [notices, setNotices] = useState<Notice[]>(DEFAULT_NOTICES);
-  const [insiderTopics, setInsiderTopics] = useState<InsiderTopic[]>(() => {
-    return DEFAULT_INSIDERS.map(item => ({
-      id: item.id,
-      title: item.title,
-      short: item.short || "",
-      bg: item.bg || "",
-      icon: item.icon || "Map",
-      content: item.content || "",
-      attachments: item.attachments || []
-    } as InsiderTopic));
+  // Global Sync States (initially loaded from session storage cache for 0ms instant load, falls back to empty array / defaults)
+  const [students, setStudents] = useState<Student[]>(() => {
+    return safeSessionStorage.parseItem<Student[]>("urp_cached_students", []);
   });
-  const [adminSettings, setAdminSettings] = useState<AdminSettings>(DEFAULT_ADMIN_SETTINGS);
-  const [contactInfo, setContactInfo] = useState<{ title?: string; email: string; phone: string }[]>([
-    { title: "General Contact", email: "sadaturp25@gmail.com", phone: "01750-121454" },
-    { title: "For any website related problems or any technical help of RUET URP'25", email: "rafitoday2007@gmail.com", phone: "01619871136" }
-  ]);
-  const [onlinePlatforms, setOnlinePlatforms] = useState<{ name: string; url: string }[]>([
-    { name: "RUET URP'25 Facebook Group", url: "https://www.facebook.com/groups/urp25ruet" },
-    { name: "Official Department Website", url: "https://www.urp.ruet.ac.bd/" },
-    { name: "URP Association Portal", url: "https://www.urp.ruet.ac.bd/notice" }
-  ]);
+  const [notices, setNotices] = useState<Notice[]>(() => {
+    return safeSessionStorage.parseItem<Notice[]>("urp_cached_notices", []);
+  });
+  const [insiderTopics, setInsiderTopics] = useState<InsiderTopic[]>(() => {
+    return safeSessionStorage.parseItem<InsiderTopic[]>("urp_cached_insider_topics", []);
+  });
+  const [isDataLoading, setIsDataLoading] = useState(() => {
+    const cachedStudents = safeSessionStorage.parseItem<Student[]>("urp_cached_students", []);
+    const cachedNotices = safeSessionStorage.parseItem<Notice[]>("urp_cached_notices", []);
+    // If we have cached profiles and notices, we don't show the initial fullscreen loading skeletons
+    return cachedStudents.length === 0 || cachedNotices.length === 0;
+  });
+  const [adminSettings, setAdminSettings] = useState<AdminSettings>(() => {
+    return safeSessionStorage.parseItem<AdminSettings>("urp_cached_admin_settings", DEFAULT_ADMIN_SETTINGS);
+  });
+  const [contactInfo, setContactInfo] = useState<{ title?: string; email: string; phone: string }[]>(() => {
+    return safeSessionStorage.parseItem<{ title?: string; email: string; phone: string }[]>("urp_cached_contact_info", [
+      { title: "General Contact", email: "sadaturp25@gmail.com", phone: "01750-121454" },
+      { title: "For any website related problems or any technical help of RUET URP'25", email: "rafitoday2007@gmail.com", phone: "01619871136" }
+    ]);
+  });
+  const [onlinePlatforms, setOnlinePlatforms] = useState<{ name: string; url: string }[]>(() => {
+    return safeSessionStorage.parseItem<{ name: string; url: string }[]>("urp_cached_online_platforms", [
+      { name: "RUET URP'25 Facebook Group", url: "https://www.facebook.com/groups/urp25ruet" },
+      { name: "Official Department Website", url: "https://www.urp.ruet.ac.bd/" },
+      { name: "URP Association Portal", url: "https://www.urp.ruet.ac.bd/notice" }
+    ]);
+  });
 
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(() => {
     const saved = safeSessionStorage.getItem("urp_admin_auth");
     return saved === "true";
   });
 
-  // Greeting Toast Notification States
-  const [showGreetingToast, setShowGreetingToast] = useState(false);
-  const [greetingMessage, setGreetingMessage] = useState("");
-
   // Back to Top State
   const [showBackToTop, setShowBackToTop] = useState(false);
+
+  const getEnabledViews = (): string[] => {
+    const list = ["Home"];
+    if (adminSettings.isFamilyEnabled !== false) list.push("Our Family");
+    if (adminSettings.isNoticesEnabled !== false) list.push("Notice");
+    if (adminSettings.isCloudEnabled !== false) list.push("Cloud");
+    if (adminSettings.isAcademicsEnabled !== false) list.push("Academic Tools");
+    if (adminSettings.isGalleryEnabled !== false) list.push("Gallery");
+    return list;
+  };
 
   // Apply dark mode classes
   useEffect(() => {
@@ -101,40 +114,6 @@ export default function App() {
     }
     safeStorage.setItem("urp_dark_mode", String(darkMode));
   }, [darkMode]);
-
-  // Greeting Toast Effect
-  useEffect(() => {
-    const hasGreeted = safeSessionStorage.getItem("urp_has_greeted");
-    if (!hasGreeted) {
-      const hours = new Date().getHours();
-      let greet = "Welcome!";
-      if (hours < 12) {
-        greet = "Good morning! ☀️";
-      } else if (hours < 17) {
-        greet = "Good afternoon! 🌤️";
-      } else if (hours < 22) {
-        greet = "Good evening! 🌌";
-      } else {
-        greet = "Hello, night owl! 🦉";
-      }
-      setGreetingMessage(`${greet} Welcome to the RUET URP'25 academic portal. Experience a clean workspace loaded with learning resources!`);
-      
-      const timer = setTimeout(() => {
-        setShowGreetingToast(true);
-        safeSessionStorage.setItem("urp_has_greeted", "true");
-      }, 1500);
-
-      // Auto-dismiss after 8.5 seconds
-      const dismissTimer = setTimeout(() => {
-        setShowGreetingToast(false);
-      }, 8500);
-      
-      return () => {
-        clearTimeout(timer);
-        clearTimeout(dismissTimer);
-      };
-    }
-  }, []);
 
   // Handle Back to Top Button visibility
   useEffect(() => {
@@ -157,6 +136,7 @@ export default function App() {
       .order("date", { ascending: false });
     if (!error && data) {
       setNotices(data as Notice[]);
+      safeSessionStorage.setItem("urp_cached_notices", JSON.stringify(data));
     }
   };
 
@@ -167,6 +147,7 @@ export default function App() {
       .order("roll", { ascending: true });
     if (!error && data) {
       setStudents(data as Student[]);
+      safeSessionStorage.setItem("urp_cached_students", JSON.stringify(data));
     }
   };
 
@@ -200,6 +181,7 @@ export default function App() {
         } as InsiderTopic;
       });
       setInsiderTopics(parsed);
+      safeSessionStorage.setItem("urp_cached_insider_topics", JSON.stringify(parsed));
     }
   };
 
@@ -210,11 +192,36 @@ export default function App() {
       .eq("key", "global_settings")
       .maybeSingle();
     if (!error && data) {
-      setAdminSettings({
-        aboutUs: data.aboutUs,
-        aboutUsImage: data.aboutUsImage,
-        policy: data.policy
-      });
+      const dbPolicy = data.policy || "";
+      // Parse embedded config from HTML/Markdown comment if present
+      let parsedConfig: Partial<AdminSettings> = {};
+      try {
+        const match = dbPolicy.match(/<!--CONFIG:(.*?)-->/s);
+        if (match && match[1]) {
+          parsedConfig = JSON.parse(match[1]);
+        }
+      } catch (e) {
+        console.error("Error parsing config from policy:", e);
+      }
+
+      const settingsPayload = {
+        aboutUs: data.aboutUs || DEFAULT_ADMIN_SETTINGS.aboutUs,
+        aboutUsImage: data.aboutUsImage || DEFAULT_ADMIN_SETTINGS.aboutUsImage,
+        policy: dbPolicy.replace(/<!--CONFIG:.*?-->/gs, "").trim(), // Strip config for clean display
+
+        isNoticesEnabled: parsedConfig.isNoticesEnabled !== undefined ? parsedConfig.isNoticesEnabled : (data.isNoticesEnabled !== undefined ? data.isNoticesEnabled : true),
+        isFamilyEnabled: parsedConfig.isFamilyEnabled !== undefined ? parsedConfig.isFamilyEnabled : (data.isFamilyEnabled !== undefined ? data.isFamilyEnabled : true),
+        isAcademicsEnabled: parsedConfig.isAcademicsEnabled !== undefined ? parsedConfig.isAcademicsEnabled : (data.isAcademicsEnabled !== undefined ? data.isAcademicsEnabled : true),
+        isCloudEnabled: parsedConfig.isCloudEnabled !== undefined ? parsedConfig.isCloudEnabled : (data.isCloudEnabled !== undefined ? data.isCloudEnabled : true),
+        isGalleryEnabled: parsedConfig.isGalleryEnabled !== undefined ? parsedConfig.isGalleryEnabled : (data.isGalleryEnabled !== undefined ? data.isGalleryEnabled : true),
+
+        galleryUrl: parsedConfig.galleryUrl || data.galleryUrl || "https://sites.google.com/view/ruet-urp-25-gallery/home",
+        cloudDriveUrl: parsedConfig.cloudDriveUrl || data.cloudDriveUrl || "https://drive.google.com/drive/folders/1Lto8hLFOJ13Evd8wNbr_Gt7s_nZRLBtB",
+        academicDriveUrl: parsedConfig.academicDriveUrl || data.academicDriveUrl || "https://drive.google.com/drive/folders/1wfKVYklIfHc17u8uv6NHgrmCgVdQGMgg?usp=drive_link"
+      };
+
+      setAdminSettings(settingsPayload);
+      safeSessionStorage.setItem("urp_cached_admin_settings", JSON.stringify(settingsPayload));
     }
   };
 
@@ -229,6 +236,7 @@ export default function App() {
           const parsed = typeof mainRow.contacts_json === 'string' ? JSON.parse(mainRow.contacts_json) : mainRow.contacts_json;
           if (Array.isArray(parsed) && parsed.length > 0) {
             setContactInfo(parsed);
+            safeSessionStorage.setItem("urp_cached_contact_info", JSON.stringify(parsed));
             return;
           }
         } catch (e) {
@@ -265,12 +273,15 @@ export default function App() {
           };
         });
         setContactInfo(contactList);
+        safeSessionStorage.setItem("urp_cached_contact_info", JSON.stringify(contactList));
         return;
       }
     }
-    setContactInfo([
+    const fallbackContact = [
       { title: "General Contact", email: "sadaturp25@gmail.com", phone: "01750-121454" }
-    ]);
+    ];
+    setContactInfo(fallbackContact);
+    safeSessionStorage.setItem("urp_cached_contact_info", JSON.stringify(fallbackContact));
   };
 
   const fetchOnlinePlatforms = async () => {
@@ -279,7 +290,9 @@ export default function App() {
       .select("*")
       .order("id", { ascending: true });
     if (!error && data) {
-      setOnlinePlatforms(data.map(p => ({ name: p.name, url: p.url })));
+      const platformsPayload = data.map(p => ({ name: p.name, url: p.url }));
+      setOnlinePlatforms(platformsPayload);
+      safeSessionStorage.setItem("urp_cached_online_platforms", JSON.stringify(platformsPayload));
     }
   };
 
@@ -348,20 +361,84 @@ export default function App() {
       }
     } catch (e) {
       console.warn("Database automatic seed check skipped:", e);
-    } finally {
-      // Always pull values
-      fetchNotices();
-      fetchStudents();
-      fetchInsiderTopics();
-      fetchSettings();
-      fetchContactInfo();
-      fetchOnlinePlatforms();
     }
   };
 
-  // Run on mount to seed database and listen for real-time changes
+  const initializeData = async () => {
+    const cachedStudents = safeSessionStorage.parseItem<Student[]>("urp_cached_students", []);
+    const cachedNotices = safeSessionStorage.parseItem<Notice[]>("urp_cached_notices", []);
+    const hasCachedData = cachedStudents.length > 0 && cachedNotices.length > 0;
+
+    if (!hasCachedData) {
+      setIsDataLoading(true);
+    }
+    try {
+      // Fetch everything in parallel - extremely fast (only 1 sequential round trip total)!
+      const [noticesRes, studentsRes] = await Promise.all([
+        supabase.from("notices").select("*").order("date", { ascending: false }),
+        supabase.from("students").select("*").order("roll", { ascending: true }),
+        fetchInsiderTopics(),
+        fetchSettings(),
+        fetchContactInfo(),
+        fetchOnlinePlatforms()
+      ]);
+
+      let needsSeeding = false;
+
+      if (!noticesRes.error && noticesRes.data) {
+        setNotices(noticesRes.data as Notice[]);
+        safeSessionStorage.setItem("urp_cached_notices", JSON.stringify(noticesRes.data));
+        if (noticesRes.data.length === 0) {
+          needsSeeding = true;
+        }
+      } else if (!hasCachedData) {
+        // Fallback to offline defaults on actual network failure so the site is never blank
+        setNotices(DEFAULT_NOTICES);
+      }
+
+      if (!studentsRes.error && studentsRes.data) {
+        setStudents(studentsRes.data as Student[]);
+        safeSessionStorage.setItem("urp_cached_students", JSON.stringify(studentsRes.data));
+        if (studentsRes.data.length === 0) {
+          needsSeeding = true;
+        }
+      } else if (!hasCachedData) {
+        // Fallback to offline defaults on actual network failure so the site is never blank
+        setStudents(DEFAULT_STUDENTS);
+      }
+
+      // If the database has absolutely 0 notices or students, seed it and reload
+      if (needsSeeding) {
+        console.log("Empty database detected. Performing database seeding...");
+        await seedDatabase();
+        // Re-fetch only notices & students after seeding
+        const [nRes, sRes] = await Promise.all([
+          supabase.from("notices").select("*").order("date", { ascending: false }),
+          supabase.from("students").select("*").order("roll", { ascending: true })
+        ]);
+        if (!nRes.error && nRes.data && nRes.data.length > 0) {
+          setNotices(nRes.data as Notice[]);
+          safeSessionStorage.setItem("urp_cached_notices", JSON.stringify(nRes.data));
+        }
+        if (!sRes.error && sRes.data && sRes.data.length > 0) {
+          setStudents(sRes.data as Student[]);
+          safeSessionStorage.setItem("urp_cached_students", JSON.stringify(sRes.data));
+        }
+      }
+    } catch (err) {
+      console.error("Initial data load failed:", err);
+      if (!hasCachedData) {
+        setStudents(DEFAULT_STUDENTS);
+        setNotices(DEFAULT_NOTICES);
+      }
+    } finally {
+      setIsDataLoading(false);
+    }
+  };
+
+  // Run on mount to initialize database and listen for real-time changes
   useEffect(() => {
-    seedDatabase();
+    initializeData();
 
     const channel = supabase
       .channel("supabase_changes_channel")
@@ -409,16 +486,6 @@ export default function App() {
       )
       .subscribe();
 
-    // Background interval fallback polling (every 8 seconds) for perfect sync if network drops or sockets disconnect
-    const pollInterval = setInterval(() => {
-      fetchNotices();
-      fetchStudents();
-      fetchInsiderTopics();
-      fetchSettings();
-      fetchContactInfo();
-      fetchOnlinePlatforms();
-    }, 8000);
-
     // Global shortcut to open global search bar
     const handleGlobalKeyDown = (e: KeyboardEvent) => {
       if (e.key === "/" && !["INPUT", "TEXTAREA"].includes((e.target as HTMLElement).tagName)) {
@@ -430,7 +497,6 @@ export default function App() {
 
     return () => {
       supabase.removeChannel(channel);
-      clearInterval(pollInterval);
       window.removeEventListener("keydown", handleGlobalKeyDown);
     };
   }, []);
@@ -613,19 +679,36 @@ export default function App() {
       setNotices(prev => [newNotice, ...prev]);
     }
 
-    const { error } = await supabase.from("notices").insert({
+    const fullPayload = {
       id: newNotice.id,
       title: newNotice.title,
       content: newNotice.content,
       date: newNotice.date,
       author: newNotice.author,
-      attachments: newNotice.attachments,
+      attachments: newNotice.attachments || [],
       publish_date: newNotice.publish_date || null,
       publish_time: newNotice.publish_time || null,
       is_latest: newNotice.is_latest || false
-    });
-    if (error) {
-      console.error("Supabase insert notice error:", error.message);
+    };
+
+    const { error: firstError } = await supabase.from("notices").insert(fullPayload);
+    
+    if (firstError) {
+      console.warn("First insert attempt failed, trying fallback without extra columns...", firstError.message);
+      const basePayload = {
+        id: newNotice.id,
+        title: newNotice.title,
+        content: newNotice.content,
+        date: newNotice.date,
+        author: newNotice.author,
+        attachments: newNotice.attachments || []
+      };
+      const { error: secondError } = await supabase.from("notices").insert(basePayload);
+      if (secondError) {
+        console.error("Both insert attempts failed. Supabase error:", secondError.message);
+      } else {
+        console.log("Successfully inserted notice using fallback base columns.");
+      }
     }
   };
 
@@ -652,21 +735,40 @@ export default function App() {
       setNotices(prev => prev.map(n => n.id === notice.id ? notice : n));
     }
 
-    const { error } = await supabase
+    const fullPayload = {
+      title: notice.title,
+      content: notice.content,
+      date: notice.date,
+      author: notice.author,
+      attachments: notice.attachments || [],
+      publish_date: notice.publish_date || null,
+      publish_time: notice.publish_time || null,
+      is_latest: notice.is_latest || false
+    };
+
+    const { error: firstError } = await supabase
       .from("notices")
-      .update({
+      .update(fullPayload)
+      .eq("id", notice.id);
+
+    if (firstError) {
+      console.warn("First update attempt failed, trying fallback without extra columns...", firstError.message);
+      const basePayload = {
         title: notice.title,
         content: notice.content,
         date: notice.date,
         author: notice.author,
-        attachments: notice.attachments,
-        publish_date: notice.publish_date || null,
-        publish_time: notice.publish_time || null,
-        is_latest: notice.is_latest || false
-      })
-      .eq("id", notice.id);
-    if (error) {
-      console.error("Supabase update notice error:", error.message);
+        attachments: notice.attachments || []
+      };
+      const { error: secondError } = await supabase
+        .from("notices")
+        .update(basePayload)
+        .eq("id", notice.id);
+      if (secondError) {
+        console.error("Both update attempts failed. Supabase error:", secondError.message);
+      } else {
+        console.log("Successfully updated notice using fallback base columns.");
+      }
     }
   };
 
@@ -745,16 +847,54 @@ export default function App() {
 
   const handleUpdateSettings = async (settings: AdminSettings) => {
     setAdminSettings(settings);
-    const { error } = await supabase
+    
+    // Prepare config payload
+    const configPayload = {
+      isNoticesEnabled: settings.isNoticesEnabled !== undefined ? settings.isNoticesEnabled : true,
+      isFamilyEnabled: settings.isFamilyEnabled !== undefined ? settings.isFamilyEnabled : true,
+      isAcademicsEnabled: settings.isAcademicsEnabled !== undefined ? settings.isAcademicsEnabled : true,
+      isCloudEnabled: settings.isCloudEnabled !== undefined ? settings.isCloudEnabled : true,
+      isGalleryEnabled: settings.isGalleryEnabled !== undefined ? settings.isGalleryEnabled : true,
+      galleryUrl: settings.galleryUrl || "https://sites.google.com/view/ruet-urp-25-gallery/home",
+      cloudDriveUrl: settings.cloudDriveUrl || "https://drive.google.com/drive/folders/1Lto8hLFOJ13Evd8wNbr_Gt7s_nZRLBtB",
+      academicDriveUrl: settings.academicDriveUrl || "https://drive.google.com/drive/folders/1wfKVYklIfHc17u8uv6NHgrmCgVdQGMgg?usp=drive_link"
+    };
+
+    // Inject config into policy text
+    const cleanPolicy = (settings.policy || "").replace(/<!--CONFIG:.*?-->/gs, "").trim();
+    const policyWithConfig = `${cleanPolicy}\n\n<!--CONFIG:${JSON.stringify(configPayload)}-->`;
+
+    // Save payload
+    const fullPayload = {
+      key: "global_settings",
+      aboutUs: settings.aboutUs,
+      aboutUsImage: settings.aboutUsImage,
+      policy: policyWithConfig,
+      ...configPayload
+    };
+
+    const { error: firstError } = await supabase
       .from("admin_settings")
-      .upsert({
+      .upsert(fullPayload);
+
+    if (firstError) {
+      console.warn("First updateSettings attempt failed, trying fallback with base columns...", firstError.message);
+      const basePayload = {
         key: "global_settings",
         aboutUs: settings.aboutUs,
         aboutUsImage: settings.aboutUsImage,
-        policy: settings.policy
-      });
-    if (error) {
-      console.error("Supabase update settings error:", error.message);
+        policy: policyWithConfig
+      };
+      const { error: secondError } = await supabase
+        .from("admin_settings")
+        .upsert(basePayload);
+      if (secondError) {
+        console.error("Both upsert attempts failed. Supabase error:", secondError.message);
+      } else {
+        console.log("Successfully updated settings using embedded config fallback.");
+      }
+    } else {
+      console.log("Successfully updated settings with full columns.");
     }
   };
 
@@ -833,7 +973,8 @@ export default function App() {
 
   const handleViewChange = (view: any) => {
     if (view === "Gallery") {
-      window.open("https://sites.google.com/view/ruet-urp-25-gallery/home", "_blank");
+      const gUrl = adminSettings.galleryUrl || "https://sites.google.com/view/ruet-urp-25-gallery/home";
+      window.open(gUrl, "_blank");
       setMobileMenuOpen(false);
       return;
     }
@@ -849,39 +990,30 @@ export default function App() {
   return (
     <div className="min-h-screen flex flex-col justify-between relative overflow-x-hidden bg-[#FAFAF9] dark:bg-[#0C0A09] text-stone-900 dark:text-[#FAFAF9] transition-colors duration-500 selection:bg-rose-500 selection:text-white">
       
-      {/* Global Colorful Rain Backdrop */}
+      {/* Colorful rain backdrop effect */}
       <ColorfulRain />
 
       {/* SpaceX Inspired Header */}
       <header className="sticky top-0 z-40 glass-nav transition-colors duration-300">
         <div className="w-full px-6 md:px-12 h-16 flex items-center justify-between">
           
-          {/* Logo / Web Title */}
-          <div className="flex items-center gap-2.5 group text-left">
-            <img 
-              src={ruetLogo} 
-              alt="RUET URP Logo" 
-              className="w-10 h-10 object-contain hover:scale-105 transition-transform rounded-full cursor-pointer"
-              referrerPolicy="no-referrer"
-              onClick={() => setLightboxImage({ src: ruetLogo, alt: "RUET URP Logo" })}
-              title="Click to view full logo"
-            />
-            <button 
-              onClick={() => handleViewChange("Home")}
-              className="font-bahnschrift font-bold text-lg tracking-tighter uppercase text-stone-900 dark:text-white cursor-pointer hover:text-rose-600 dark:hover:text-rose-500 transition-colors"
-            >
-              RUET URP'25
-            </button>
-          </div>
+          {/* Web Title */}
+          <button 
+            onClick={() => handleViewChange("Home")}
+            className="font-sans font-black text-xl md:text-2xl tracking-tight bg-gradient-to-r from-rose-500 via-amber-400 to-rose-600 bg-clip-text text-transparent cursor-pointer hover:scale-105 transition-transform duration-300"
+          >
+            RUET URP'25
+          </button>
 
           {/* Desktop Menu - SpaceX inspired minimalist uppercase text */}
           <nav className="hidden md:flex items-center gap-8">
-            {(["Home", "Our Family", "Notice", "Cloud", "Academic Tools", "Gallery"] as any[]).map((view) => {
+            {getEnabledViews().map((view) => {
               if (view === "Gallery") {
+                const gUrl = adminSettings.galleryUrl || "https://sites.google.com/view/ruet-urp-25-gallery/home";
                 return (
                   <a
                     key={view}
-                    href="https://sites.google.com/view/ruet-urp-25-gallery/home"
+                    href={gUrl}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="text-[15px] font-bahnschrift font-semibold tracking-wider uppercase transition-colors relative py-1 cursor-pointer text-stone-500 dark:text-stone-300 hover:text-rose-600 dark:hover:text-rose-500"
@@ -980,12 +1112,13 @@ export default function App() {
                 <span>Search Website</span>
               </button>
 
-              {(["Home", "Our Family", "Notice", "Cloud", "Academic Tools", "Gallery"] as any[]).map((view) => {
+              {getEnabledViews().map((view) => {
                 if (view === "Gallery") {
+                  const gUrl = adminSettings.galleryUrl || "https://sites.google.com/view/ruet-urp-25-gallery/home";
                   return (
                     <a
                       key={view}
-                      href="https://sites.google.com/view/ruet-urp-25-gallery/home"
+                      href={gUrl}
                       target="_blank"
                       rel="noopener noreferrer"
                       onClick={() => setMobileMenuOpen(false)}
@@ -1041,6 +1174,7 @@ export default function App() {
                 students={students} 
                 insiders={insiderTopics}
                 onNavigate={handleViewChange} 
+                adminSettings={adminSettings}
               />
             )}
 
@@ -1048,6 +1182,7 @@ export default function App() {
               <OurFamilyView 
                 students={students} 
                 onViewImage={(src, alt) => setLightboxImage({ src, alt })}
+                isLoading={isDataLoading}
               />
             )}
 
@@ -1055,15 +1190,21 @@ export default function App() {
               <NoticeView 
                 notices={notices} 
                 onViewImage={(src, alt) => setLightboxImage({ src, alt })}
+                isLoading={isDataLoading}
               />
             )}
 
             {activeView === "Cloud" && (
-              <CloudView />
+              <CloudView 
+                cloudDriveUrl={adminSettings.cloudDriveUrl} 
+                academicDriveUrl={adminSettings.academicDriveUrl} 
+              />
             )}
 
             {activeView === "Academic Tools" && (
-              <AcademicToolsView />
+              <AcademicToolsView 
+                academicDriveUrl={adminSettings.academicDriveUrl} 
+              />
             )}
 
             {activeView === "Admin Panel" && (
@@ -1295,15 +1436,6 @@ export default function App() {
         )}
       </AnimatePresence>
 
-      {/* Polish Greeting Toast */}
-      <AnimatePresence>
-        {showGreetingToast && (
-          <GreetingToast 
-            message={greetingMessage} 
-            onClose={() => setShowGreetingToast(false)} 
-          />
-        )}
-      </AnimatePresence>
     </div>
   );
 }

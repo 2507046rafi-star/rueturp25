@@ -18,7 +18,7 @@ import {
   Bookmark,
   Sparkles
 } from "lucide-react";
-import { Notice, Student, InsiderTopic, safeStorage } from "../types";
+import { Notice, Student, InsiderTopic, AdminSettings, safeStorage } from "../types";
 import * as Icons from "lucide-react";
 
 interface HomeViewProps {
@@ -26,9 +26,10 @@ interface HomeViewProps {
   students: Student[];
   insiders: InsiderTopic[];
   onNavigate: (view: "Home" | "Our Family" | "Notice" | "Cloud" | "Academic Tools" | "Admin Panel") => void;
+  adminSettings?: AdminSettings;
 }
 
-export default function HomeView({ notices, students, insiders = [], onNavigate }: HomeViewProps) {
+export default function HomeView({ notices, students, insiders = [], onNavigate, adminSettings }: HomeViewProps) {
   const [selectedInsider, setSelectedInsider] = useState<string | null>(null);
   
   // Background images slideshow for Hero section
@@ -246,112 +247,134 @@ export default function HomeView({ notices, students, insiders = [], onNavigate 
             </p>
 
             <div className="pt-4 flex flex-wrap gap-4">
-              <button 
-                onClick={() => onNavigate("Our Family")}
-                className="btn-spacex px-8 py-3.5 text-xs font-bold uppercase tracking-widest cursor-pointer bg-stone-900 dark:bg-white text-white dark:text-stone-900 hover:opacity-95 transition duration-300 rounded"
-              >
-                Meet the Family
-              </button>
-              <button 
-                onClick={() => onNavigate("Notice")}
-                className="px-8 py-3.5 text-xs font-bold uppercase tracking-widest border border-stone-250 dark:border-stone-800 text-stone-600 dark:text-stone-400 hover:text-stone-900 dark:hover:text-white transition duration-300 rounded cursor-pointer"
-              >
-                Academic Notices
-              </button>
+              {adminSettings?.isFamilyEnabled !== false && (
+                <button 
+                  onClick={() => onNavigate("Our Family")}
+                  className="btn-spacex px-8 py-3.5 text-xs font-bold uppercase tracking-widest cursor-pointer bg-stone-900 dark:bg-white text-white dark:text-stone-900 hover:opacity-95 transition duration-300 rounded"
+                >
+                  Meet the Family
+                </button>
+              )}
+              {adminSettings?.isNoticesEnabled !== false && (
+                <button 
+                  onClick={() => onNavigate("Notice")}
+                  className="px-8 py-3.5 text-xs font-bold uppercase tracking-widest border border-stone-250 dark:border-stone-800 text-stone-600 dark:text-stone-400 hover:text-stone-900 dark:hover:text-white transition duration-300 rounded cursor-pointer"
+                >
+                  Academic Notices
+                </button>
+              )}
             </div>
           </div>
         </div>
       </section>      {/* Main Container below full screen hero */}
       <div className="px-4 sm:px-6 md:px-12 max-w-7xl mx-auto space-y-16 w-full">
         {/* Quick Features Bento Grid */}
-        <section className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          
-          {/* Box 1: Quick Notice with Ultra Premium Rainbow Border */}
-          <div className="latest-notice-rainbow-border hover-lift transition-all duration-300 shadow-xl">
-            <div 
-              onClick={() => onNavigate("Notice")}
-              className="p-8 bg-white dark:bg-stone-950 rounded-[calc(1.5rem-3.5px)] hover:bg-stone-50/50 dark:hover:bg-stone-900/20 text-left flex flex-col justify-between h-full min-h-[220px] cursor-pointer"
-            >
-              <div className="flex justify-between items-start mb-6">
-                <span className="font-mono text-xs bg-rose-50 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400 px-3 py-1.5 rounded font-bold uppercase tracking-widest animate-pulse">
-                  LATEST NOTICE
-                </span>
-                <span className="text-stone-300 dark:text-stone-750 font-display font-bold text-3xl">01</span>
-              </div>
-              <div className="space-y-3.5">
-                <h3 className="text-sm font-bold uppercase tracking-widest text-stone-850 dark:text-white break-words leading-snug">
-                  {latestNotice.title}
-                </h3>
-                <div className="text-[10px] font-mono font-semibold text-rose-600 dark:text-rose-400 flex flex-wrap gap-x-2.5 gap-y-1 items-center bg-rose-50/50 dark:bg-rose-950/20 px-3 py-1.5 rounded-xl border border-rose-100 dark:border-rose-900/30 w-fit">
-                  <span className="flex items-center gap-1">📅 {formatNoticeDateTime(latestNotice).date}</span>
-                  <span className="text-rose-200 dark:text-rose-900">|</span>
-                  <span className="flex items-center gap-1">🕒 {formatNoticeDateTime(latestNotice).time}</span>
-                </div>
-                <p className="text-xs text-stone-600 dark:text-stone-300 leading-relaxed font-normal line-clamp-3">
-                  {latestNotice.content}
-                </p>
-              </div>
-              <div className="mt-4 text-[10px] font-bold text-rose-500 dark:text-rose-400 uppercase tracking-widest flex items-center gap-1">
-                Read Notice Board <ArrowRight className="w-3 h-3" />
-              </div>
-            </div>
-          </div>
-
-          {/* Box 2: Family / Members */}
-          <div className="border border-stone-200 dark:border-stone-850 rounded-3xl bg-white dark:bg-stone-950 overflow-hidden shadow-sm hover:shadow-md card-hover transition-all duration-300">
-            <div 
-              onClick={() => onNavigate("Our Family")}
-              className="p-8 hover:bg-stone-50/50 dark:hover:bg-stone-900/20 text-left flex flex-col justify-between h-full min-h-[220px] cursor-pointer"
-            >
-              <div className="flex justify-between items-start mb-6">
-                <span className="font-mono text-[10px] bg-orange-50 dark:bg-orange-950/30 text-orange-600 dark:text-orange-400 px-2.5 py-1 rounded font-bold uppercase tracking-wider">
-                  BATCH MEMBERS
-                </span>
-                <span className="text-stone-300 dark:text-stone-750 font-display font-bold text-3xl">02</span>
-              </div>
-              <div>
-                <h3 className="text-sm font-bold uppercase tracking-widest text-stone-850 dark:text-white mb-2">
-                  URP'25 Insiders
-                </h3>
-                <div className="flex flex-wrap gap-1.5 mt-2">
-                  <span className="text-[9px] font-mono border border-stone-200 dark:border-stone-800 px-2.5 py-1 rounded-xl text-stone-500 dark:text-stone-400">GIS Club</span>
-                  <span className="text-[9px] font-mono border border-stone-200 dark:border-stone-800 px-2.5 py-1 rounded-xl text-stone-500 dark:text-stone-400">URP Core</span>
-                  <span className="text-[9px] font-mono border border-stone-200 dark:border-stone-800 px-2.5 py-1 rounded-xl text-stone-500 dark:text-stone-400">Photography</span>
+        {((adminSettings?.isNoticesEnabled !== false) || (adminSettings?.isFamilyEnabled !== false) || (adminSettings?.isCloudEnabled !== false)) && (
+          <section className={`grid grid-cols-1 ${
+            (adminSettings?.isNoticesEnabled !== false ? 1 : 0) + 
+            (adminSettings?.isFamilyEnabled !== false ? 1 : 0) + 
+            (adminSettings?.isCloudEnabled !== false ? 1 : 0) === 1
+              ? "md:grid-cols-1 max-w-md mx-auto"
+              : (adminSettings?.isNoticesEnabled !== false ? 1 : 0) + 
+                (adminSettings?.isFamilyEnabled !== false ? 1 : 0) + 
+                (adminSettings?.isCloudEnabled !== false ? 1 : 0) === 2
+                ? "md:grid-cols-2 max-w-4xl mx-auto"
+                : "md:grid-cols-3"
+          } gap-6`}>
+            
+            {/* Box 1: Quick Notice with Ultra Premium Rainbow Border */}
+            {adminSettings?.isNoticesEnabled !== false && (
+              <div className="latest-notice-rainbow-border hover-lift transition-all duration-300 shadow-xl">
+                <div 
+                  onClick={() => onNavigate("Notice")}
+                  className="p-8 bg-white dark:bg-stone-950 rounded-[calc(1.5rem-3.5px)] hover:bg-stone-50/50 dark:hover:bg-stone-900/20 text-left flex flex-col justify-between h-full min-h-[220px] cursor-pointer"
+                >
+                  <div className="flex justify-between items-start mb-6">
+                    <span className="font-mono text-xs bg-rose-50 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400 px-3 py-1.5 rounded font-bold uppercase tracking-widest animate-pulse">
+                      LATEST NOTICE
+                    </span>
+                    <span className="text-stone-300 dark:text-stone-750 font-display font-bold text-3xl">01</span>
+                  </div>
+                  <div className="space-y-3.5">
+                    <h3 className="text-sm font-bold uppercase tracking-widest text-stone-850 dark:text-white break-words leading-snug">
+                      {latestNotice.title}
+                    </h3>
+                    <div className="text-[10px] font-mono font-semibold text-rose-600 dark:text-rose-400 flex flex-wrap gap-x-2.5 gap-y-1 items-center bg-rose-50/50 dark:bg-rose-950/20 px-3 py-1.5 rounded-xl border border-rose-100 dark:border-rose-900/30 w-fit">
+                      <span className="flex items-center gap-1">📅 {formatNoticeDateTime(latestNotice).date}</span>
+                      <span className="text-rose-200 dark:text-rose-900">|</span>
+                      <span className="flex items-center gap-1">🕒 {formatNoticeDateTime(latestNotice).time}</span>
+                    </div>
+                    <p className="text-xs text-stone-600 dark:text-stone-300 leading-relaxed font-normal line-clamp-3">
+                      {latestNotice.content}
+                    </p>
+                  </div>
+                  <div className="mt-4 text-[10px] font-bold text-rose-500 dark:text-rose-400 uppercase tracking-widest flex items-center gap-1">
+                    Read Notice Board <ArrowRight className="w-3 h-3" />
+                  </div>
                 </div>
               </div>
-              <div className="mt-4 text-[10px] font-bold text-rose-500 dark:text-rose-400 uppercase tracking-widest flex items-center gap-1">
-                Browse Family <ArrowRight className="w-3 h-3" />
-              </div>
-            </div>
-          </div>
+            )}
 
-          {/* Box 3: Cloud / Materials */}
-          <div className="border border-stone-200 dark:border-stone-850 rounded-3xl bg-white dark:bg-stone-950 overflow-hidden shadow-sm hover:shadow-md card-hover transition-all duration-300">
-            <div 
-              onClick={() => onNavigate("Cloud")}
-              className="p-8 hover:bg-stone-50/50 dark:hover:bg-stone-900/20 text-left flex flex-col justify-between h-full min-h-[220px] cursor-pointer"
-            >
-              <div className="flex justify-between items-start mb-6">
-                <span className="font-mono text-[10px] bg-stone-100 dark:bg-stone-900 text-stone-600 dark:text-stone-400 px-2.5 py-1 rounded font-bold uppercase tracking-wider">
-                  DRIVE STORAGE
-                </span>
-                <span className="text-stone-300 dark:text-stone-750 font-display font-bold text-3xl">03</span>
+            {/* Box 2: Family / Members */}
+            {adminSettings?.isFamilyEnabled !== false && (
+              <div className="border border-stone-200 dark:border-stone-850 rounded-3xl bg-white dark:bg-stone-950 overflow-hidden shadow-sm hover:shadow-md card-hover transition-all duration-300">
+                <div 
+                  onClick={() => onNavigate("Our Family")}
+                  className="p-8 hover:bg-stone-50/50 dark:hover:bg-stone-900/20 text-left flex flex-col justify-between h-full min-h-[220px] cursor-pointer"
+                >
+                  <div className="flex justify-between items-start mb-6">
+                    <span className="font-mono text-[10px] bg-orange-50 dark:bg-orange-950/30 text-orange-600 dark:text-orange-400 px-2.5 py-1 rounded font-bold uppercase tracking-wider">
+                      BATCH MEMBERS
+                    </span>
+                    <span className="text-stone-300 dark:text-stone-750 font-display font-bold text-3xl">02</span>
+                  </div>
+                  <div>
+                    <h3 className="text-sm font-bold uppercase tracking-widest text-stone-850 dark:text-white mb-2">
+                      URP'25 Insiders
+                    </h3>
+                    <div className="flex flex-wrap gap-1.5 mt-2">
+                      <span className="text-[9px] font-mono border border-stone-200 dark:border-stone-800 px-2.5 py-1 rounded-xl text-stone-500 dark:text-stone-400">GIS Club</span>
+                      <span className="text-[9px] font-mono border border-stone-200 dark:border-stone-800 px-2.5 py-1 rounded-xl text-stone-500 dark:text-stone-400">URP Core</span>
+                      <span className="text-[9px] font-mono border border-stone-200 dark:border-stone-800 px-2.5 py-1 rounded-xl text-stone-500 dark:text-stone-400">Photography</span>
+                    </div>
+                  </div>
+                  <div className="mt-4 text-[10px] font-bold text-rose-500 dark:text-rose-400 uppercase tracking-widest flex items-center gap-1">
+                    Browse Family <ArrowRight className="w-3 h-3" />
+                  </div>
+                </div>
               </div>
-              <div>
-                <h3 className="text-sm font-bold uppercase tracking-widest text-stone-850 dark:text-white mb-2">
-                  Academic Cloud
-                </h3>
-                <p className="text-xs text-stone-600 dark:text-stone-300 leading-relaxed font-normal">
-                  Access 1st to 4th year lecture files, drive folders, book archives, and utility programs.
-                </p>
-              </div>
-              <div className="mt-4 text-[10px] font-bold text-rose-500 dark:text-rose-400 uppercase tracking-widest flex items-center gap-1">
-                Explore Drive <ArrowRight className="w-3 h-3" />
-              </div>
-            </div>
-          </div>
+            )}
 
-        </section>
+            {/* Box 3: Cloud / Materials */}
+            {adminSettings?.isCloudEnabled !== false && (
+              <div className="border border-stone-200 dark:border-stone-850 rounded-3xl bg-white dark:bg-stone-950 overflow-hidden shadow-sm hover:shadow-md card-hover transition-all duration-300">
+                <div 
+                  onClick={() => onNavigate("Cloud")}
+                  className="p-8 hover:bg-stone-50/50 dark:hover:bg-stone-900/20 text-left flex flex-col justify-between h-full min-h-[220px] cursor-pointer"
+                >
+                  <div className="flex justify-between items-start mb-6">
+                    <span className="font-mono text-[10px] bg-stone-100 dark:bg-stone-900 text-stone-600 dark:text-stone-400 px-2.5 py-1 rounded font-bold uppercase tracking-wider">
+                      DRIVE STORAGE
+                    </span>
+                    <span className="text-stone-300 dark:text-stone-750 font-display font-bold text-3xl">03</span>
+                  </div>
+                  <div>
+                    <h3 className="text-sm font-bold uppercase tracking-widest text-stone-850 dark:text-white mb-2">
+                      Academic Cloud
+                    </h3>
+                    <p className="text-xs text-stone-600 dark:text-stone-300 leading-relaxed font-normal">
+                      Access 1st to 4th year lecture files, drive folders, book archives, and utility programs.
+                    </p>
+                  </div>
+                  <div className="mt-4 text-[10px] font-bold text-rose-500 dark:text-rose-400 uppercase tracking-widest flex items-center gap-1">
+                    Explore Drive <ArrowRight className="w-3 h-3" />
+                  </div>
+                </div>
+              </div>
+            )}
+
+          </section>
+        )}
 
       {/* URP'25 Insiders bento layout */}
       <section className="w-full space-y-8">

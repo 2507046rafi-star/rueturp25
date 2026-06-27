@@ -20,7 +20,8 @@ import {
   Star,
   ShoppingCart,
   RefreshCw,
-  FileText
+  FileText,
+  Settings
 } from "lucide-react";
 import { Student, Notice, InsiderTopic, AdminSettings, getCacheBustedUrl } from "../types";
 import { supabase } from "../lib/supabaseClient";
@@ -93,7 +94,7 @@ export default function AdminPanelView({
   const [passcode, setPasscode] = useState("");
   const [errorMsg, setErrorMsg] = useState("");
   const [activeEnquiry, setActiveEnquiry] = useState<
-    "notice" | "students" | "gallery" | "contact" | "ruet" | "platforms" | "policy"
+    "notice" | "students" | "gallery" | "contact" | "ruet" | "platforms" | "policy" | "features"
   >("notice");
 
 
@@ -151,11 +152,29 @@ export default function AdminPanelView({
   // 7. Policy
   const [policyText, setPolicyText] = useState(adminSettings.policy);
 
+  // 8. Feature Toggles & Custom URLs
+  const [isNoticesEnabled, setIsNoticesEnabled] = useState(adminSettings.isNoticesEnabled !== false);
+  const [isFamilyEnabled, setIsFamilyEnabled] = useState(adminSettings.isFamilyEnabled !== false);
+  const [isAcademicsEnabled, setIsAcademicsEnabled] = useState(adminSettings.isAcademicsEnabled !== false);
+  const [isCloudEnabled, setIsCloudEnabled] = useState(adminSettings.isCloudEnabled !== false);
+  const [isGalleryEnabled, setIsGalleryEnabled] = useState(adminSettings.isGalleryEnabled !== false);
+  const [galleryUrl, setGalleryUrl] = useState(adminSettings.galleryUrl || "");
+  const [cloudDriveUrl, setCloudDriveUrl] = useState(adminSettings.cloudDriveUrl || "");
+  const [academicDriveUrl, setAcademicDriveUrl] = useState(adminSettings.academicDriveUrl || "");
+
   // Sync admin settings when prop changes (e.g. from real-time database or async load)
   useEffect(() => {
     setAboutUsText(adminSettings.aboutUs);
     setAboutUsImage(adminSettings.aboutUsImage);
     setPolicyText(adminSettings.policy);
+    setIsNoticesEnabled(adminSettings.isNoticesEnabled !== false);
+    setIsFamilyEnabled(adminSettings.isFamilyEnabled !== false);
+    setIsAcademicsEnabled(adminSettings.isAcademicsEnabled !== false);
+    setIsCloudEnabled(adminSettings.isCloudEnabled !== false);
+    setIsGalleryEnabled(adminSettings.isGalleryEnabled !== false);
+    setGalleryUrl(adminSettings.galleryUrl || "");
+    setCloudDriveUrl(adminSettings.cloudDriveUrl || "");
+    setAcademicDriveUrl(adminSettings.academicDriveUrl || "");
   }, [adminSettings]);
 
   // Sync contact info when prop changes (e.g. from real-time database or async load)
@@ -409,6 +428,22 @@ export default function AdminPanelView({
     triggerToast("Website Policy updated!");
   };
 
+  const handleUpdateFeaturesSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    onUpdateSettings({
+      ...adminSettings,
+      isNoticesEnabled,
+      isFamilyEnabled,
+      isAcademicsEnabled,
+      isCloudEnabled,
+      isGalleryEnabled,
+      galleryUrl,
+      cloudDriveUrl,
+      academicDriveUrl,
+    });
+    triggerToast("Feature visibility & dynamic URLs synchronized successfully!");
+  };
+
   // If NOT authenticated, show elegant SpaceX styled Lock screen
   if (!isAuthenticated) {
     return (
@@ -465,7 +500,8 @@ export default function AdminPanelView({
     { id: "contact", label: "Contact channels", icon: Phone },
     { id: "ruet", label: "RUET URP'25 Enquiry", icon: Info },
     { id: "platforms", label: "Online Platforms Enquiry", icon: Network },
-    { id: "policy", label: "Website Policy Enquiry", icon: ShieldAlert }
+    { id: "policy", label: "Website Policy Enquiry", icon: ShieldAlert },
+    { id: "features", label: "Feature Controls", icon: Settings }
   ];
 
   return (
@@ -1407,6 +1443,136 @@ export default function AdminPanelView({
                   className="px-4 py-2 bg-rose-500 hover:bg-rose-600 text-white font-semibold uppercase rounded-lg transition cursor-pointer flex items-center gap-1.5"
                 >
                   <Save className="w-3.5 h-3.5" /> Save Policy Settings
+                </button>
+              </form>
+            </div>
+          )}
+
+          {/* FEATURE CONTROLS */}
+          {activeEnquiry === "features" && (
+            <div className="space-y-6">
+              <div className="border-b border-gray-150 dark:border-gray-800 pb-3">
+                <h3 className="font-display font-extrabold text-lg text-gray-900 dark:text-white uppercase">
+                  Feature & Access Control Settings
+                </h3>
+                <p className="text-xs text-gray-400">Enable or disable website modules and override external redirects with custom URLs.</p>
+              </div>
+
+              <form onSubmit={handleUpdateFeaturesSubmit} className="space-y-6 text-xs">
+                {/* Checkbox Grid */}
+                <div className="space-y-3">
+                  <span className="text-[10px] font-mono uppercase text-gray-400 block mb-1">Module Visibility Toggles</span>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <label className="flex items-center gap-3 p-3 rounded-xl bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 cursor-pointer hover:bg-gray-100/50 dark:hover:bg-gray-750 transition">
+                      <input
+                        type="checkbox"
+                        checked={isNoticesEnabled}
+                        onChange={(e) => setIsNoticesEnabled(e.target.checked)}
+                        className="w-4 h-4 rounded text-rose-500 focus:ring-rose-500 border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-950"
+                      />
+                      <div>
+                        <span className="font-bold text-gray-800 dark:text-white uppercase text-[11px] block">Academic Notices</span>
+                        <span className="text-[10px] text-gray-400 block leading-tight font-light">Toggle notice board and instant banner.</span>
+                      </div>
+                    </label>
+
+                    <label className="flex items-center gap-3 p-3 rounded-xl bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 cursor-pointer hover:bg-gray-100/50 dark:hover:bg-gray-750 transition">
+                      <input
+                        type="checkbox"
+                        checked={isFamilyEnabled}
+                        onChange={(e) => setIsFamilyEnabled(e.target.checked)}
+                        className="w-4 h-4 rounded text-rose-500 focus:ring-rose-500 border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-950"
+                      />
+                      <div>
+                        <span className="font-bold text-gray-800 dark:text-white uppercase text-[11px] block">Our Family (Roster)</span>
+                        <span className="text-[10px] text-gray-400 block leading-tight font-light">Toggle student directory and profile views.</span>
+                      </div>
+                    </label>
+
+                    <label className="flex items-center gap-3 p-3 rounded-xl bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 cursor-pointer hover:bg-gray-100/50 dark:hover:bg-gray-750 transition">
+                      <input
+                        type="checkbox"
+                        checked={isAcademicsEnabled}
+                        onChange={(e) => setIsAcademicsEnabled(e.target.checked)}
+                        className="w-4 h-4 rounded text-rose-500 focus:ring-rose-500 border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-950"
+                      />
+                      <div>
+                        <span className="font-bold text-gray-800 dark:text-white uppercase text-[11px] block">Academic Tools</span>
+                        <span className="text-[10px] text-gray-400 block leading-tight font-light">Toggle course tools and planning softwares.</span>
+                      </div>
+                    </label>
+
+                    <label className="flex items-center gap-3 p-3 rounded-xl bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 cursor-pointer hover:bg-gray-100/50 dark:hover:bg-gray-750 transition">
+                      <input
+                        type="checkbox"
+                        checked={isCloudEnabled}
+                        onChange={(e) => setIsCloudEnabled(e.target.checked)}
+                        className="w-4 h-4 rounded text-rose-500 focus:ring-rose-500 border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-950"
+                      />
+                      <div>
+                        <span className="font-bold text-gray-800 dark:text-white uppercase text-[11px] block">Academic Cloud</span>
+                        <span className="text-[10px] text-gray-400 block leading-tight font-light">Toggle Google Drive file system directory.</span>
+                      </div>
+                    </label>
+
+                    <label className="flex items-center gap-3 p-3 rounded-xl bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 cursor-pointer hover:bg-gray-100/50 dark:hover:bg-gray-750 transition sm:col-span-2">
+                      <input
+                        type="checkbox"
+                        checked={isGalleryEnabled}
+                        onChange={(e) => setIsGalleryEnabled(e.target.checked)}
+                        className="w-4 h-4 rounded text-rose-500 focus:ring-rose-500 border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-950"
+                      />
+                      <div>
+                        <span className="font-bold text-gray-800 dark:text-white uppercase text-[11px] block">Official Gallery</span>
+                        <span className="text-[10px] text-gray-400 block leading-tight font-light">Toggle dynamic redirect to RUET URP'25 Google Sites Gallery.</span>
+                      </div>
+                    </label>
+                  </div>
+                </div>
+
+                {/* Redirect URLs Input fields */}
+                <div className="space-y-4">
+                  <span className="text-[10px] font-mono uppercase text-gray-400 block mb-1">Dynamic Resource Overrides</span>
+
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-mono uppercase text-gray-400">Official Gallery URL Override</label>
+                    <input
+                      type="url"
+                      placeholder="https://sites.google.com/view/ruet-urp-25-gallery/home"
+                      value={galleryUrl}
+                      onChange={(e) => setGalleryUrl(e.target.value)}
+                      className="w-full px-3 py-2 rounded-lg bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-800 dark:text-gray-100 focus:outline-none focus:ring-1 focus:ring-rose-500 font-mono"
+                    />
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-mono uppercase text-gray-400">Academic Cloud Drive URL Override</label>
+                    <input
+                      type="url"
+                      placeholder="https://drive.google.com/drive/folders/1Lto8hLFOJ13Evd8wNbr_Gt7s_nZRLBtB"
+                      value={cloudDriveUrl}
+                      onChange={(e) => setCloudDriveUrl(e.target.value)}
+                      className="w-full px-3 py-2 rounded-lg bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-800 dark:text-gray-100 focus:outline-none focus:ring-1 focus:ring-rose-500 font-mono"
+                    />
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-mono uppercase text-gray-400">Academic Tools Software Drive URL Override</label>
+                    <input
+                      type="url"
+                      placeholder="https://drive.google.com/drive/folders/1wfKVYklIfHc17u8uv6NHgrmCgVdQGMgg?usp=drive_link"
+                      value={academicDriveUrl}
+                      onChange={(e) => setAcademicDriveUrl(e.target.value)}
+                      className="w-full px-3 py-2 rounded-lg bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-800 dark:text-gray-100 focus:outline-none focus:ring-1 focus:ring-rose-500 font-mono"
+                    />
+                  </div>
+                </div>
+
+                <button
+                  type="submit"
+                  className="px-4 py-2 bg-rose-500 hover:bg-rose-600 text-white font-semibold uppercase rounded-lg transition cursor-pointer flex items-center gap-1.5"
+                >
+                  <Save className="w-3.5 h-3.5" /> Synchronize Feature Settings
                 </button>
               </form>
             </div>

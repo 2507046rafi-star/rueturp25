@@ -99,7 +99,15 @@ Batch 2025 of RUET URP represents a cohort of ambitious, brilliant students equi
 3. **Data Privacy**: Personal details such as contact numbers and emails are published with explicit student consent. Any scraping or harassment based on student directories is strictly illegal.
 4. **Platform Security**: The Admin Panel is securely locked. Only the designated administrator and developer can edit, add, or delete notices and batch information.
 
-For inquiries or updates, please reach out to the Web Coordinator, Sadat Rahman Khan.`
+For inquiries or updates, please reach out to the Web Coordinator, Sadat Rahman Khan.`,
+  isNoticesEnabled: true,
+  isFamilyEnabled: true,
+  isAcademicsEnabled: true,
+  isCloudEnabled: true,
+  isGalleryEnabled: true,
+  galleryUrl: "https://sites.google.com/view/ruet-urp-25-gallery/home",
+  cloudDriveUrl: "https://drive.google.com/drive/folders/1Lto8hLFOJ13Evd8wNbr_Gt7s_nZRLBtB",
+  academicDriveUrl: "https://drive.google.com/drive/folders/1wfKVYklIfHc17u8uv6NHgrmCgVdQGMgg?usp=drive_link"
 };
 
 export const DEFAULT_INSIDERS: InsiderTopic[] = [

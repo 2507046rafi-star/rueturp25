@@ -41,9 +41,10 @@ export function getNoticeTags(notice: Notice): string[] {
 interface NoticeViewProps {
   notices: Notice[];
   onViewImage?: (src: string, alt: string) => void;
+  isLoading?: boolean;
 }
 
-export default function NoticeView({ notices, onViewImage }: NoticeViewProps) {
+export default function NoticeView({ notices, onViewImage, isLoading }: NoticeViewProps) {
   const [noticeSearch, setNoticeSearch] = useState(() => {
     try {
       return localStorage.getItem("notice_search_init") || "";
@@ -60,6 +61,37 @@ export default function NoticeView({ notices, onViewImage }: NoticeViewProps) {
 
   const [selectedTag, setSelectedTag] = useState("All");
   const [sortBy, setSortBy] = useState<"date-desc" | "date-asc" | "title" | "author">("date-desc");
+
+  if (isLoading) {
+    return (
+      <div id="notices-view-loading" className="space-y-6 w-full max-w-4xl mx-auto px-1 sm:px-4">
+        {/* Title skeleton */}
+        <div className="text-center space-y-2 animate-pulse">
+          <div className="h-9 w-48 bg-stone-200 dark:bg-stone-800 rounded mx-auto" />
+        </div>
+
+        {/* Filter / search bar skeleton */}
+        <div className="bg-white dark:bg-stone-950 p-4 rounded-xl border border-stone-200 dark:border-stone-850 h-16 w-full animate-pulse" />
+
+        {/* Notices Skeleton List */}
+        <div className="space-y-4">
+          {[...Array(3)].map((_, i) => (
+            <div key={i} className="bg-white dark:bg-stone-950 p-6 rounded-xl border border-stone-200 dark:border-stone-850 space-y-4 animate-pulse">
+              <div className="flex justify-between items-center">
+                <div className="h-4 w-24 bg-stone-200 dark:bg-stone-800 rounded" />
+                <div className="h-4 w-32 bg-stone-200 dark:bg-stone-800 rounded" />
+              </div>
+              <div className="h-6 w-3/4 bg-stone-200 dark:bg-stone-800 rounded" />
+              <div className="space-y-2 pt-2">
+                <div className="h-3 w-full bg-stone-200 dark:bg-stone-800 rounded" />
+                <div className="h-3 w-5/6 bg-stone-200 dark:bg-stone-800 rounded" />
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  }
 
   const formatDate = (dateStr: string) => {
     try {

@@ -19,26 +19,36 @@ import { Student, getCacheBustedUrl } from "../types";
 // Graceful fallback avatar image if any URL is broken or blocked by browser policies
 function AvatarImage({ src, alt, fallbackClass = "w-10 h-10 text-gray-400" }: { src: string; alt: string; fallbackClass?: string }) {
   const [error, setError] = useState(false);
-  if (error) {
+
+  React.useEffect(() => {
+    setError(false);
+  }, [src]);
+
+  if (error || !src) {
     return <User className={fallbackClass} />;
   }
+
   return (
-    <img
-      src={src}
-      alt={alt}
-      referrerPolicy="no-referrer"
-      className="w-full h-full object-cover"
-      onError={() => setError(true)}
-    />
+    <div className="relative w-full h-full bg-stone-100 dark:bg-stone-900 flex items-center justify-center">
+      <img
+        src={src}
+        alt={alt}
+        referrerPolicy="no-referrer"
+        className="w-full h-full object-cover"
+        onError={() => setError(true)}
+        loading="lazy"
+      />
+    </div>
   );
 }
 
 interface OurFamilyViewProps {
   students: Student[];
   onViewImage?: (src: string, alt: string) => void;
+  isLoading?: boolean;
 }
 
-export default function OurFamilyView({ students, onViewImage }: OurFamilyViewProps) {
+export default function OurFamilyView({ students, onViewImage, isLoading }: OurFamilyViewProps) {
   const [activeTab, setActiveTab] = useState<"teachers" | "students">("students");
   const [searchQuery, setSearchQuery] = useState(() => {
     try {
@@ -55,6 +65,42 @@ export default function OurFamilyView({ students, onViewImage }: OurFamilyViewPr
     } catch {}
   }, []);
   const [tagFilter, setTagFilter] = useState<string>("All");
+
+  if (isLoading) {
+    return (
+      <div id="our-family-view-loading" className="space-y-8 w-full max-w-7xl mx-auto px-1 sm:px-4">
+        {/* View Title */}
+        <div className="text-center space-y-2 animate-pulse">
+          <div className="h-9 w-48 bg-stone-200 dark:bg-stone-800 rounded mx-auto" />
+        </div>
+
+        {/* Tab Buttons Skeleton */}
+        <div className="flex justify-center border-b border-gray-200 dark:border-gray-800 pb-px gap-8 animate-pulse">
+          <div className="h-5 w-32 bg-stone-200 dark:bg-stone-800 rounded mb-4" />
+          <div className="h-5 w-24 bg-stone-200 dark:bg-stone-800 rounded mb-4" />
+        </div>
+
+        {/* Search bar Skeleton */}
+        <div className="bg-white dark:bg-stone-950 p-4 rounded-xl border border-stone-200 dark:border-stone-850 h-16 w-full animate-pulse" />
+
+        {/* Grid Skeleton */}
+        <div className="grid sm:grid-cols-2 md:grid-cols-3 gap-6 pt-2">
+          {[...Array(6)].map((_, i) => (
+            <div key={i} className="bg-white dark:bg-stone-950 p-6 rounded-2xl border border-stone-200 dark:border-stone-850 space-y-4 animate-pulse">
+              <div className="w-24 h-24 rounded-full bg-stone-200 dark:bg-stone-800 mx-auto" />
+              <div className="h-5 w-32 bg-stone-200 dark:bg-stone-800 mx-auto rounded" />
+              <div className="h-3 w-16 bg-stone-200 dark:bg-stone-800 mx-auto rounded" />
+              <div className="space-y-2 pt-2">
+                <div className="h-3 w-full bg-stone-200 dark:bg-stone-800 rounded" />
+                <div className="h-3 w-5/6 bg-stone-200 dark:bg-stone-800 rounded mx-auto" />
+              </div>
+              <div className="h-10 bg-stone-100 dark:bg-stone-900 w-full rounded-lg" />
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  }
 
   // Find unique tags to populate filter
   const allTags = ["All", ...Array.from(new Set(students.flatMap(s => s.tags || [])))];
@@ -252,7 +298,7 @@ export default function OurFamilyView({ students, onViewImage }: OurFamilyViewPr
                       onClick={() => setSelectedStudent(student)}
                       className="mt-5 w-full py-2 bg-stone-50 hover:bg-rose-500 hover:text-white dark:bg-stone-900 dark:hover:bg-rose-500 text-stone-700 dark:text-stone-250 rounded-lg text-xs font-semibold tracking-wider uppercase transition-all duration-300 flex items-center justify-center gap-1.5 border border-stone-200/50 dark:border-stone-800 cursor-pointer"
                     >
-                      Full Profile <ChevronRight className="w-3.5 h-3.5" />
+                      View Profile <ChevronRight className="w-3.5 h-3.5" />
                     </button>
                   </div>
                 );
@@ -270,7 +316,6 @@ export default function OurFamilyView({ students, onViewImage }: OurFamilyViewPr
                           transition: { type: "spring", stiffness: 100, damping: 15 }
                         }
                       }}
-                      layoutId={`student-card-${student.roll}`}
                       className="premium-border-container shadow-md hover:shadow-[0_12px_24px_-8px_rgba(244,63,94,0.25)] hover-lift transition-all duration-300"
                     >
                       <div className="premium-border-inner bg-white dark:bg-stone-950 p-6 relative overflow-hidden text-center flex flex-col justify-between h-full">
@@ -292,7 +337,6 @@ export default function OurFamilyView({ students, onViewImage }: OurFamilyViewPr
                         transition: { type: "spring", stiffness: 100, damping: 15 }
                       }
                     }}
-                    layoutId={`student-card-${student.roll}`}
                     className="premium-border-container shadow-sm hover:shadow-[0_10px_20px_-10px_rgba(244,63,94,0.15)] hover-lift transition-all duration-300"
                   >
                     <div className="premium-border-inner bg-white dark:bg-stone-950 p-6 relative overflow-hidden text-center flex flex-col justify-between h-full">
@@ -316,7 +360,11 @@ export default function OurFamilyView({ students, onViewImage }: OurFamilyViewPr
         {selectedStudent && (
           <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
             <motion.div
-              layoutId={`student-card-${selectedStudent.roll}`}
+              key={selectedStudent.roll}
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              transition={{ duration: 0.2, ease: "easeOut" }}
               className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-2xl max-w-lg w-full overflow-hidden shadow-2xl relative"
             >
               {/* Top cover decoration */}

@@ -35,6 +35,14 @@ export interface AdminSettings {
   aboutUs: string; // up to 1000 words
   aboutUsImage: string;
   policy: string;
+  isNoticesEnabled?: boolean;
+  isFamilyEnabled?: boolean;
+  isAcademicsEnabled?: boolean;
+  isCloudEnabled?: boolean;
+  isGalleryEnabled?: boolean;
+  galleryUrl?: string;
+  cloudDriveUrl?: string;
+  academicDriveUrl?: string;
 }
 
 export type ViewType = 
@@ -114,18 +122,6 @@ export const PAGE_LOAD_TIMESTAMP = Date.now();
 
 export function getCacheBustedUrl(url: string | undefined): string {
   if (!url) return "";
-  if (url.startsWith("data:")) return url;
-  
-  let cleanUrl = url;
-  try {
-    const urlObj = new URL(url);
-    urlObj.searchParams.delete("cb");
-    cleanUrl = urlObj.toString();
-  } catch (e) {
-    cleanUrl = url.split("?cb=")[0].split("&cb=")[0];
-  }
-  
-  const buster = `cb=${PAGE_LOAD_TIMESTAMP}`;
-  return cleanUrl.includes("?") ? `${cleanUrl}&${buster}` : `${cleanUrl}?${buster}`;
+  return url;
 }
 
