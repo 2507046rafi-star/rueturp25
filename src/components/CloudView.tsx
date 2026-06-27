@@ -26,13 +26,13 @@ export default function CloudView({ cloudDriveUrl, academicDriveUrl }: CloudView
       description: "",
       drives: [
         {
-          name: "Drive - 01",
+          name: "Drive - 01 (URP-25 official)",
           url: cloudDriveUrl || "https://drive.google.com/drive/folders/1Lto8hLFOJ13Evd8wNbr_Gt7s_nZRLBtB",
           desc: ""
         },
         {
           name: "Drive - 02",
-          url: academicDriveUrl || "https://drive.google.com/drive/folders/1EprFnQrzZ3HafRD2lbOFNHosqAxbmQ_i",
+          url: "https://drive.google.com/drive/folders/1EprFnQrzZ3HafRD2lbOFNHosqAxbmQ_i",
           desc: ""
         }
       ]
